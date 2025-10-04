@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>就要创作 - AI 小说创作系统</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+            line-height: 1.6;
+            color: #0f172a;
+            background: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .nav-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .logo img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            color: #475569;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-menu a:hover {
+            color: #0f172a;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .github-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #0f172a;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .github-badge:hover {
+            border-color: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .github-badge svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .github-badge .star-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        /* Nav GitHub Badge - 紧凑版 */
+        nav .github-badge {
+            padding: 8px 16px;
+            gap: 6px;
+        }
+
+        nav .github-badge svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        nav .github-badge .star-count {
+            padding: 3px 6px;
+            font-size: 13px;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 160px 32px 120px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -5%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: -5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 20px;
+            color: #2563eb;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+
+        .hero h1 {
+            font-size: 58px;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #0f172a;
+            margin-bottom: 24px;
+            letter-spacing: 0em;
+        }
+
+        .hero p {
+            font-size: 24px;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto 48px;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* QR Code Container */
+        .qr-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .qr-popup {
+            position: absolute;
+            bottom: calc(100% + 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .qr-popup::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 10px solid transparent;
+            border-top-color: white;
+        }
+
+        .qr-container:hover .qr-popup {
+            opacity: 1;
+            visibility: visible;
+            bottom: calc(100% + 16px);
+        }
+
+        .qr-popup img {
+            width: 200px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .qr-popup p {
+            margin: 0;
+            color: #475569;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Hero Social */
+        .hero-social {
+            margin-top: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-text {
+            color: #64748b;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .hero-social-links {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .hero-social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: 20px;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .hero-social-links a:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .wechat-hover {
+            position: relative;
+            display: inline-block;
+        }
+
+        .wechat-qr-popup {
+            position: absolute;
+            bottom: calc(100% + 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 100;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .wechat-qr-popup::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 10px solid transparent;
+            border-top-color: white;
+        }
+
+        .wechat-hover:hover .wechat-qr-popup {
+            opacity: 1;
+            visibility: visible;
+            bottom: calc(100% + 16px);
+        }
+
+        .wechat-qr-popup img {
+            width: 200px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .wechat-qr-popup p {
+            margin: 0;
+            color: #475569;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-hero {
+            padding: 16px 32px;
+            font-size: 18px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .btn-white {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-white:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-outline {
+            background: white;
+            color: #0f172a;
+            border: 2px solid #e5e7eb;
+        }
+
+        .btn-outline:hover {
+            background: #f9fafb;
+            border-color: #2563eb;
+        }
+
+        /* Demo Terminal */
+        .demo-section {
+            padding: 0;
+            margin-top: -80px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .demo-terminal {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .terminal-header {
+            background: #0f172a;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-green { background: #10b981; }
+
+        .terminal-body {
+            padding: 32px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 15px;
+            line-height: 2;
+            color: #e2e8f0;
+        }
+
+        .t-green { color: #34d399; }
+        .t-blue { color: #60a5fa; }
+        .t-purple { color: #a78bfa; }
+        .t-gray { color: #94a3b8; }
+
+        /* Stats */
+        .stats {
+            padding: 120px 32px;
+            background: #fff;
+        }
+
+        .stats-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 48px;
+            text-align: center;
+        }
+
+        .stat-card {
+            padding: 32px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* Features */
+        .features {
+            padding: 120px 32px;
+            background: #f8fafc;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            padding: 6px 16px;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #2563eb;
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-color: #2563eb;
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: #2563eb;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        /* How it works */
+        .how-section {
+            padding: 120px 32px;
+            background: white;
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .steps-container::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 40px;
+            bottom: 40px;
+            width: 2px;
+            background: #2563eb;
+        }
+
+        .step {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 64px;
+            position: relative;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            background: #2563eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-content {
+            flex: 1;
+            background: #f8fafc;
+            padding: 32px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .step-content h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .step-content p {
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 80px 32px;
+            background: #0f172a;
+        }
+
+        .pricing .section-header .section-tag {
+            background: rgba(37, 99, 235, 0.2);
+            color: #60a5fa;
+        }
+
+        .pricing .section-title {
+            color: white;
+        }
+
+        .pricing .section-subtitle {
+            color: #94a3b8;
+        }
+
+        .pricing-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .pricing-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 32px;
+            position: relative;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pricing-card:hover {
+            border-color: #475569;
+            transform: translateY(-4px);
+        }
+
+        .pricing-card.featured {
+            border-color: #2563eb;
+            background: #1e293b;
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: #2563eb;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .pricing-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: white;
+        }
+
+        .pricing-price {
+            font-size: 16px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+
+        .pricing-desc {
+            color: #cbd5e1;
+            margin-bottom: 24px;
+            font-size: 15px;
+            line-height: 1.6;
+            padding: 16px;
+            background: rgba(51, 65, 85, 0.3);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 24px;
+            flex: 1;
+        }
+
+        .pricing-features li {
+            padding: 10px 0;
+            color: #e2e8f0;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            line-height: 1.6;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 50%;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .pricing-card.featured .pricing-features li::before {
+            color: #60a5fa;
+        }
+
+        .btn-full {
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+            font-size: 15px;
+            margin-top: auto;
+            background: white;
+            color: #0f172a;
+            border: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: block;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+
+        .btn-full:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* CTA */
+        .cta-section {
+            padding: 100px 32px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-wrapper {
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .cta-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 20px;
+            color: #2563eb;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .cta-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .cta-text {
+            font-size: 18px;
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 40px;
+        }
+
+        .cta-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .cta-stat-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .cta-stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        .cta-stat-label {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .cta-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .cta-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 24px;
+        }
+
+        .cta-checklist {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .cta-checklist li {
+            padding: 12px 0;
+            color: #475569;
+            font-size: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cta-checklist li:last-child {
+            border-bottom: none;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-cta {
+            flex: 1;
+            padding: 14px 24px;
+            font-size: 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .btn-outline-light {
+            background: white;
+            color: #0f172a;
+            border: 2px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .btn-outline-light:hover {
+            background: #f8fafc;
+            border-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        /* Footer */
+        footer {
+            background: #0f172a;
+            color: white;
+            padding: 80px 32px 40px;
+        }
+
+        .footer-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 64px;
+            margin-bottom: 64px;
+        }
+
+        .footer-section h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .footer-section p {
+            color: #94a3b8;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links a {
+            display: block;
+            padding: 8px 0;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid #1e293b;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 56px; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .pricing-grid { 
+                grid-template-columns: 1fr; 
+                max-width: 600px;
+            }
+            .pricing-card.featured { transform: scale(1); }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-content { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu { display: none; }
+            .hero h1 { font-size: 40px; }
+            .hero p { font-size: 18px; }
+            .section-title { font-size: 36px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .footer-content { grid-template-columns: 1fr; gap: 40px; }
+            .steps-container::before { display: none; }
+            
+            .cta-grid { 
+                grid-template-columns: 1fr; 
+                gap: 40px; 
+            }
+            .cta-title { font-size: 32px; }
+            .cta-stats { grid-template-columns: 1fr; gap: 20px; }
+            .cta-buttons { flex-direction: column; }
+            
+            .hero-social {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .social-text {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Nav -->
+    <nav>
+        <div class="nav-content">
+            <a href="/" class="logo">
+                <img src="favicon.png" alt="就要创作">
+                <span>就要创作</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="#features">功能</a></li>
+                <li><a href="#how">工作原理</a></li>
+                <li><a href="#pricing">产品矩阵</a></li>
+                <li><a href="https://api.91hub.vip" target="_blank">AI API平台</a></li>
+            </ul>
+            <a href="https://github.com/ponysb/91Writing" class="github-badge" target="_blank">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+                GitHub
+                <span class="star-count">
+                    ⭐ <span id="star-count-nav">-</span>
+                </span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                基于 ReAct 架构的智能创作系统
+            </div>
+            <h1>免费拥有专属写作团队<br>让网文大神为你创作</h1>
+            <p>智能上下文注入 · 提示词知识库 · 版本历史管理<br>从构思到成文，一气呵成</p>
+            <div class="hero-cta">
+                <a href="/index.html" class="btn btn-white btn-hero">使用教程</a>
+                <div class="qr-container">
+                    <a href="javascript:void(0)" class="btn btn-outline btn-hero">加入社群</a>
+                    <div class="qr-popup">
+                        <img src="/public/static/qq.png" alt="QQ群二维码">
+                        <p>扫码加入QQ群</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-social">
+                <span class="social-text">关注我们获取最新资讯：</span>
+                <div class="hero-social-links">
+                    <a href="https://space.bilibili.com/7318180" target="_blank" aria-label="关注B站" title="关注B站">
+                        <i class="fab fa-bilibili"></i>
+                    </a>
+                    
+                    <div class="wechat-hover">
+                        <a href="javascript:void(0)" aria-label="关注公众号" title="关注公众号">
+                            <i class="fab fa-weixin"></i>
+                        </a>
+                        <div class="wechat-qr-popup">
+                            <img src="/public/static/dy.jpg" alt="微信公众号二维码">
+                            <p>扫码关注公众号</p>
+                        </div>
+                    </div>
+                    
+                    <a href="https://github.com/ponysb/91Writing" target="_blank" aria-label="访问GitHub" title="访问GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    
+                    <a href="https://www.weibo.com/u/3971198408" target="_blank" aria-label="关注微博" title="关注微博">
+                        <i class="fab fa-weibo"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Terminal -->
+    <section class="demo-section">
+        <div style="max-width: 1280px; margin: 0 auto; padding: 0 32px;">
+            <div class="demo-terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dot dot-red"></div>
+                    <div class="terminal-dot dot-yellow"></div>
+                    <div class="terminal-dot dot-green"></div>
+                </div>
+                <div class="terminal-body">
+                    <div><span class="t-green">你</span> <span class="t-gray">写第三章，要遮天的感觉，主角要霸气一点</span></div>
+                    <div style="height: 12px;"></div>
+                    <div><span class="t-blue">AI</span> <span class="t-gray">好的，让我开始创作...</span></div>
+                    <div style="height: 12px;"></div>
+                    <div><span class="t-purple">→</span> <span class="t-gray">正在查看项目文件...</span></div>
+                    <div><span class="t-purple">→</span> <span class="t-gray">正在读取《创作提示词知识库》</span></div>
+                    <div><span class="t-purple">→</span> <span class="t-gray">正在读取《故事大纲》</span></div>
+                    <div><span class="t-purple">→</span> <span class="t-gray">正在读取《第二章》</span></div>
+                    <div><span class="t-purple">→</span> <span class="t-gray">正在读取《主角-叶凡》</span></div>
+                    <div style="height: 12px;"></div>
+                    <div><span class="t-purple">→</span> <span class="t-gray">正在创作《第三章 - 荒古禁地》(3000字)...</span></div>
+                    <div style="height: 12px;"></div>
+                    <div><span class="t-blue">AI</span> <span class="t-gray">✓ 第三章创作完成！共 3128 字，已保存并备份。</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">开源</div>
+                <div class="stat-label">MIT 许可证</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">5000+</div>
+                <div class="stat-label">单章节字数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">8 个</div>
+                <div class="stat-label">智能工具</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7 种</div>
+                <div class="stat-label">文件类型</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="section-header">
+            <div class="section-tag">核心功能</div>
+            <h2 class="section-title">专业的 AI 创作工具</h2>
+            <p class="section-subtitle">从智能推理到版本管理，为创作者提供全流程支持</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>多写作专家</h3>
+                <p>采用 ReAct 架构，多写作专家自主推理和决策。使用 Function Calling 技术，更稳定可靠。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <h3>动态上下文注入</h3>
+                <p>AI 自动读取大纲、人物、世界观，确保内容一致性。不需要手动复制粘贴。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎨</div>
+                <h3>提示词知识库</h3>
+                <p>双层提示词系统，Web UI 直接编辑，AI 智能读取应用。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">✍️</div>
+                <h3>长文本生成</h3>
+                <p>支持 3000+ 字章节一次性生成，支持遮天、现实主义、爽文等各种风格。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💻</div>
+                <h3>Web 界面</h3>
+                <p>三栏布局、多标签管理、@ 文件引用、实时流式输出。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📁</div>
+                <h3>项目管理</h3>
+                <p>多项目支持、7 种文件夹、自动索引、文件版本历史。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>版本历史</h3>
+                <p>每次修改自动备份，随时查看、对比、回退历史版本。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>实时流式输出</h3>
+                <p>实时查看 AI 思考过程和创作进度，透明、可控、高效。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3>灵活配置</h3>
+                <p>支持所有兼容 OpenAI API 的模型，自由选择最适合的 AI。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="how-section">
+        <div class="section-header">
+            <div class="section-tag">工作原理</div>
+            <h2 class="section-title">四步完成创作</h2>
+            <p class="section-subtitle">全自动、智能化、零打扰</p>
+        </div>
+
+        <div class="steps-container">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>上下文发现</h3>
+                    <p>AI 首先探索项目结构，列出大纲、章节、人物设定等文件，了解项目全貌。</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>智能检索</h3>
+                    <p>读取提示词知识库了解风格要求，读取大纲了解框架，读取前文确保连贯。</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>内容创作</h3>
+                    <p>基于所有上下文，一次性生成 3000+ 字高质量章节，自动保存，自动备份。</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>完成反馈</h3>
+                    <p>创作完成后，AI 给出清晰的总结，你可以立即查看、编辑或继续下一章。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="pricing">
+        <div class="section-header">
+            <div class="section-tag">产品矩阵</div>
+            <h2 class="section-title">选择适合你的产品</h2>
+            <p class="section-subtitle">从网文创作到影视制作，全方位 AI 创作解决方案</p>
+        </div>
+
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3>91写作</h3>
+                <div class="pricing-price">在线版</div>
+                <div class="pricing-desc">更加强大的 AI 网文创作平台</div>
+                <ul class="pricing-features">
+                    <li>在线使用，无需部署</li>
+                    <li>云端同步</li>
+                    <li>多设备访问</li>
+                    <li>强大的 AI 引擎</li>
+                    <li>海量模板库</li>
+                    <li>团队协作</li>
+                    <li>自动更新</li>
+                    <li>技术支持</li>
+                </ul>
+                <a href="https://xiezuo.91hub.vip" target="_blank" class="btn btn-full">立即体验</a>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="pricing-badge">当前项目</div>
+                <h3>就要创作</h3>
+                <div class="pricing-price">开源版</div>
+                <div class="pricing-desc">适合个人创作者和开发者</div>
+                <ul class="pricing-features">
+                    <li>完整源代码</li>
+                    <li>本地部署</li>
+                    <li>自定义 AI 模型</li>
+                    <li>所有核心功能</li>
+                    <li>提示词知识库</li>
+                    <li>版本历史</li>
+                    <li>无使用限制</li>
+                    <li>社区支持</li>
+                </ul>
+                <a href="https://github.com/ponysb/91Writing" target="_blank" class="btn btn-full">查看 GitHub</a>
+            </div>
+
+            <div class="pricing-card">
+                <h3>就要创作（影视专家）</h3>
+                <div class="pricing-price">规划中</div>
+                <div class="pricing-desc">AI 电影级媒体制作平台</div>
+                <ul class="pricing-features">
+                    <li>本地安装</li>
+                    <li>数据安全</li>
+                    <li>图片模型集成</li>
+                    <li>视频模型集成</li>
+                    <li>剧本生成</li>
+                    <li>分镜设计</li>
+                    <li>智能剪辑</li>
+                    <li>特效渲染</li>
+                </ul>
+                <a href="#contact" class="btn btn-full">敬请期待</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-wrapper">
+            <div class="cta-grid">
+                <div class="cta-left">
+                    <div class="cta-badge">🚀 开始创作之旅</div>
+                    <h2 class="cta-title">准备好释放创作力了吗？</h2>
+                    <p class="cta-text">加入数千位创作者，使用 AI 加速你的写作流程。从构思到成文，只需几分钟。</p>
+                    <div class="cta-stats">
+                        <div class="cta-stat-item">
+                            <div class="cta-stat-number">5000+</div>
+                            <div class="cta-stat-label">单章字数</div>
+                        </div>
+                        <div class="cta-stat-item">
+                            <div class="cta-stat-number">开源</div>
+                            <div class="cta-stat-label">MIT 许可</div>
+                        </div>
+                        <div class="cta-stat-item">
+                            <div class="cta-stat-number">3 分钟</div>
+                            <div class="cta-stat-label">快速上手</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cta-right">
+                    <div class="cta-card">
+                        <h3>🎯 快速开始</h3>
+                        <ul class="cta-checklist">
+                            <li>✓ 克隆仓库到本地</li>
+                            <li>✓ 配置 API Key</li>
+                            <li>✓ 启动服务</li>
+                            <li>✓ 开始创作第一章</li>
+                        </ul>
+                        <div class="cta-buttons">
+                            <a href="/index.html" class="btn btn-primary btn-cta">立即开始</a>
+                            <a href="https://github.com/ponysb/91Writing" target="_blank" class="btn btn-outline-light btn-cta">查看文档</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>就要创作</h4>
+                <p>基于 AI 的智能小说创作系统，采用 ReAct 架构，为创作者提供专业的 AI 写作解决方案。</p>
+            </div>
+
+            <div class="footer-section">
+                <h4>产品</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">核心功能</a></li>
+                    <li><a href="#how">工作原理</a></li>
+                    <li><a href="#pricing">产品矩阵</a></li>
+                    <li><a href="/index.html">开始使用</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>资源</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/ponysb/91Writing">GitHub</a></li>
+                    <li><a href="">文档</a></li>
+                    <li><a href="https://github.com/ponysb/91Writing/issues">反馈</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>技术</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/langchain-ai/langchainjs">LangChain.js</a></li>
+                    <li><a href="https://platform.openai.com/">OpenAI API</a></li>
+                    <li><a href="https://expressjs.com/">Express.js</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            © 2025 就要创作. All rights reserved. MIT License
+        </div>
+    </footer>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                const target = document.querySelector(a.getAttribute('href'));
+                if (target) {
+                    window.scrollTo({
+                        top: target.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // 获取 GitHub Star 数量
+        async function fetchGitHubStars() {
+            try {
+                const response = await fetch('https://api.github.com/repos/ponysb/91Writing');
+                const data = await response.json();
+                const starCount = data.stargazers_count || 0;
+                const starCountText = starCount.toLocaleString();
+                
+                // 更新导航栏的 star 数量
+                const navStarCount = document.getElementById('star-count-nav');
+                if (navStarCount) {
+                    navStarCount.textContent = starCountText;
+                }
+            } catch (error) {
+                console.error('Failed to fetch GitHub stars:', error);
+                const navStarCount = document.getElementById('star-count-nav');
+                if (navStarCount) {
+                    navStarCount.textContent = '0';
+                }
+            }
+        }
+
+        // 页面加载时获取 star 数量
+        fetchGitHubStars();
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>就要创作 - AI 小说创作系统</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="/static/marked.min.js"></script>
+    <!-- Diff2Html for file diff visualization -->
+    <link rel="stylesheet" href="/static/diff2html.min.css" />
+    <script src="/static/diff2html-ui.min.js"></script>
+</head>
+<body>
+    <!-- 遮罩层 -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+    
+    <div class="container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="favicon.png" alt="Logo" class="logo">
+                <h1>就要创作</h1>
+            </div>
+            
+            <div class="project-selector">
+                <h3>📁 项目</h3>
+                <div class="project-controls">
+                    <select id="projectSelect">
+                        <option value="">选择项目...</option>
+                    </select>
+                    <button id="newProjectBtn" class="btn btn-small">+ 新建</button>
+                </div>
+            </div>
+            
+            <div class="file-browser" id="fileBrowser" style="display: none;">
+                <div class="file-browser-header">
+                    <h3>📂 文件浏览</h3>
+                    <div class="file-browser-actions">
+                        <button id="refreshFilesBtn" class="btn-icon" title="刷新文件列表">🔄</button>
+                        <button id="newFileBtn" class="btn-text">新建文件</button>
+                    </div>
+                </div>
+                <div class="file-tree" id="fileTree">
+                    <!-- 文件树将在这里动态生成 -->
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 中间文件预览区域 -->
+            <div class="file-preview-container">
+                <!-- Tab 栏 -->
+                <div class="preview-tabs" id="previewTabs">
+                    <div class="tab-list" id="tabList">
+                        <!-- 动态生成标签页 -->
+                    </div>
+                    <div class="preview-header-actions">
+                        <button id="savePreviewBtn" class="btn btn-primary" style="display: none;">💾 保存</button>
+                        <div class="file-preview-actions" id="filePreviewActions" style="display: none;">
+                            <button id="acceptChangesBtn" class="btn btn-success">✓ 接受</button>
+                            <button id="rejectChangesBtn" class="btn btn-danger">✗ 拒绝</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="file-preview-content" id="filePreviewContent">
+                    <div class="preview-welcome">
+                        <div class="preview-welcome-icon">📁</div>
+                        <h3>欢迎使用文件预览</h3>
+                        <p>点击左侧文件树中的文件进行预览</p>
+                        <p class="preview-tip">💡 当 AI Agent 修改文件时，这里会自动显示 Diff 对比</p>
+                    </div>
+                    
+                    <!-- 普通文件预览 -->
+                    <div id="normalPreview" class="normal-preview" style="display: none;">
+                        <textarea id="filePreviewEditor" class="file-preview-editor" placeholder="文件内容..."></textarea>
+                    </div>
+                    
+                    <!-- Diff 预览 -->
+                    <div id="diffPreview" class="diff-preview" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- 右侧 AI 对话区域 -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <!-- 移动端菜单按钮 -->
+                    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="打开菜单">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <h2>💬 AI 助手</h2>
+                    <div class="chat-header-actions">
+                        <button id="promptSettingsBtn" class="btn btn-small" title="提示词设置">⚙️ 提示词</button>
+                        <button id="clearHistoryBtn" class="btn btn-small">清空历史</button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Loading 状态 -->
+                    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">AI 正在思考中...</div>
+                    </div>
+                    
+                    <div class="welcome-message">
+                        <h2>👋 欢迎使用就要创作</h2>
+                        <p>请先选择或创建一个项目，然后告诉我你想做什么。</p>
+                        <div class="examples">
+                            <h3>💡 示例：</h3>
+                            <ul>
+                                <li>"创作一个中国神界的主角角色，保存到人物设定里"</li>
+                                <li>"列出所有人物设定文件"</li>
+                                <li>"读取第一章的内容"</li>
+                                <li>"写第三章"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <!-- 文件引用区域 -->
+                    <div class="file-reference-area" id="fileReferenceArea" style="display: none;">
+                        <div class="reference-header">
+                            <span>📎 已引用的文件</span>
+                            <button id="clearReferencesBtn" class="btn-text">清空</button>
+                        </div>
+                        <div class="reference-list" id="referenceList"></div>
+                    </div>
+                    
+                    <!-- 文件操作按钮 -->
+                    <div class="file-actions">
+                        <button id="atFileBtn" class="btn-file-action" title="引用项目文件 (快捷键: @)">
+                            <span>@ 引用项目文件</span>
+                        </button>
+                        <button id="uploadFileBtn" class="btn-file-action" title="上传本地文件">
+                            <span>📤 上传文件</span>
+                        </button>
+                        <input type="file" id="fileUploadInput" accept=".txt,.md" style="display: none;" multiple>
+                    </div>
+                    
+                    <div class="input-group" style="position: relative;">
+                        <!-- @ 文件选择下拉菜单 -->
+                        <div id="atFileDropdown" class="at-file-dropdown" style="display: none;">
+                            <div class="at-file-search">
+                                <input type="text" id="atFileSearchInput" placeholder="搜索文件...">
+                            </div>
+                            <div class="at-file-list" id="atFileList">
+                                <!-- 动态生成 -->
+                            </div>
+                            <div class="at-file-hint">
+                                <span>↑↓ 选择</span>
+                                <span>Enter 确认</span>
+                                <span>Esc 取消</span>
+                            </div>
+                        </div>
+                        
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="告诉我你想做什么... (输入 @ 引用项目文件)"
+                            rows="3"
+                        ></textarea>
+                        <button id="sendBtn" class="btn btn-primary">
+                            <span>发送</span>
+                            <span class="loading" style="display: none;">⏳ 处理中...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 新建项目模态框 -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <h2>📝 新建项目</h2>
+            <input type="text" id="newProjectName" placeholder="输入项目名称...">
+            <div class="modal-actions">
+                <button id="createProjectBtn" class="btn btn-primary">创建</button>
+                <button id="cancelProjectBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 文件预览/编辑模态框 -->
+    <div id="fileEditorModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="fileEditorTitle">📄 文件预览</h2>
+                <button id="closeFileEditor" class="btn-close">×</button>
+            </div>
+            <div class="file-editor-container">
+                <textarea id="fileEditorContent" placeholder="加载中..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button id="saveFileBtn" class="btn btn-primary">💾 保存</button>
+                <button id="cancelFileEditBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新建文件模态框 -->
+    <div id="newFileModal" class="modal">
+        <div class="modal-content">
+            <h2>📝 新建文件</h2>
+            <div class="form-group">
+                <label for="newFileType">文件类型：</label>
+                <select id="newFileType">
+                    <option value="人物设定">人物设定</option>
+                    <option value="世界观设定">世界观设定</option>
+                    <option value="章节内容">章节内容</option>
+                    <option value="大纲">大纲</option>
+                    <option value="灵感记录">灵感记录</option>
+                    <option value="设定资料">设定资料</option>
+                    <option value="创作笔记">创作笔记</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="newFileName">文件名：</label>
+                <input type="text" id="newFileName" placeholder="输入文件名...">
+            </div>
+            <div class="modal-actions">
+                <button id="confirmNewFileBtn" class="btn btn-primary">创建</button>
+                <button id="cancelNewFileBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 选择项目文件模态框 -->
+    <div id="selectProjectFileModal" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2>@ 选择项目文件</h2>
+                <button id="closeSelectFileModal" class="btn-close">×</button>
+            </div>
+            <div class="file-selector-container">
+                <div class="file-selector-tree" id="fileSelectorTree">
+                    <!-- 动态生成文件列表 -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="confirmSelectFileBtn" class="btn btn-primary">确认引用</button>
+                <button id="cancelSelectFileBtn" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提示词设置模态框 -->
+    <div id="promptSettingsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>⚙️ 提示词设置</h2>
+                <button id="closePromptSettingsModal" class="btn-close">×</button>
+            </div>
+            
+            <div class="prompt-tabs">
+                <button class="prompt-tab active" data-tab="project">📝 项目提示词</button>
+                <button class="prompt-tab" data-tab="system">🔧 系统提示词</button>
+            </div>
+            
+            <div class="prompt-editor-container">
+                <!-- 项目提示词 -->
+                <div id="projectPromptTab" class="prompt-tab-content active">
+                    <div class="prompt-info">
+                        <p>💡 编辑当前项目的创作提示词知识库，AI 会根据需要自动读取这些提示词</p>
+                        <p class="prompt-path">文件: <code>创作提示词知识库.md</code></p>
+                    </div>
+                    <textarea id="projectPromptEditor" class="prompt-editor" placeholder="加载中..."></textarea>
+                    <div class="modal-actions">
+                        <button id="saveProjectPromptBtn" class="btn btn-primary">💾 保存项目提示词</button>
+                        <button class="btn" onclick="document.getElementById('promptSettingsModal').style.display='none'">取消</button>
+                    </div>
+                </div>
+                
+                <!-- 系统提示词 -->
+                <div id="systemPromptTab" class="prompt-tab-content">
+                    <div class="prompt-info">
+                        <p>⚠️ 编辑全局系统提示词，影响所有项目的 AI 行为</p>
+                        <p class="prompt-path">文件: <code>prompts/novel-writing-function-calling.md</code></p>
+                    </div>
+                    <textarea id="systemPromptEditor" class="prompt-editor" placeholder="加载中..."></textarea>
+                    <div class="modal-actions">
+                        <button id="saveSystemPromptBtn" class="btn btn-primary">💾 保存系统提示词</button>
+                        <button class="btn" onclick="document.getElementById('promptSettingsModal').style.display='none'">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
+
