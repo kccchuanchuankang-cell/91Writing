@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>就要创作 - 一站式AI网文创作平台</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/diff2html.min.css">
+    <script src="/static/marked.min.js"></script>
+    <script src="/static/diff2html-ui.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧：项目列表 -->
+        <aside class="project-sidebar" id="projectSidebar">
+            <div class="sidebar-header">
+                <div class="logo-section">
+                    <div class="logo-icon">📖</div>
+                    <div class="logo-text">
+                        <h1>就要创作</h1>
+                        <p>一站式AI网文创作平台</p>
+                    </div>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开侧边栏">◀</button>
+            </div>
+            
+            <div class="sidebar-content">
+                <button class="new-project-btn" id="newProjectBtn">
+                    + 新建小说项目
+                </button>
+                
+                <div class="search-box">
+                    <input type="text" id="projectSearch" placeholder="搜索小说项目...">
+                </div>
+                
+                <div class="project-list" id="projectList">
+                    <!-- 动态生成项目列表 -->
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="avatar">👤</div>
+                    <div class="user-details">
+                        <div class="username">白金作家</div>
+                        <div class="user-role">修改人物语</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- 中间：文件管理 -->
+        <main class="outline-panel" id="outlinePanel">
+            <div class="outline-header">
+                <h2 id="projectTitle">星辰修仙传</h2>
+                <button class="refresh-project-btn" id="refreshProjectBtn" title="手动刷新项目文件">🔄</button>
+            </div>
+            
+            <div class="outline-content" id="outlineContent">
+                <!-- 动态生成文件夹结构 -->
+            </div>
+        </main>
+        
+        <!-- 可拖动分隔条 -->
+        <div class="resizer" id="outlineResizer"></div>
+        
+        <!-- 右侧：内容编辑区 -->
+        <div class="editor-panel">
+                <!-- 缺省页 -->
+                <div id="editorEmptyState" class="editor-empty-state">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">📝</div>
+                        <h3 class="empty-state-title">尚未选择文件</h3>
+                        <p class="empty-state-description">请从左侧文件列表中选择一个文件进行编辑</p>
+                        <div class="empty-state-tips">
+                            <p><strong>提示：</strong></p>
+                            <ul>
+                                <li>在文件夹上右键点击可以新建文件</li>
+                                <li>双击文件可以快速打开</li>
+                                <li>拖拽文件可以移动到其他文件夹</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="editor-header">
+                    <div class="chapter-tabs" id="chapterTabs">
+                        <!-- 动态生成文件标签 -->
+                    </div>
+                    <div class="editor-actions">
+                        <button class="btn-save-chapter" id="saveChapterBtn">保存</button>
+                    </div>
+                </div>
+                
+                <div class="editor-content">
+                    <div class="chapter-title-editor">
+                        <input type="text" id="chapterTitleInput" placeholder="章节标题..." />
+                    </div>
+                    <textarea id="chapterContentEditor" placeholder="开始创作你的小说..."></textarea>
+                </div>
+                
+                <!-- Diff 预览区域 -->
+                <div id="diffPreview" class="diff-preview" style="display: none;">
+                    <div class="diff-header">
+                        <div class="diff-title">
+                            <span class="diff-icon">📝</span>
+                            <span id="diffFileName">AI 建议的修改</span>
+                        </div>
+                        <div class="diff-actions">
+                            <button id="acceptDiffBtn" class="btn btn-accept">✓ 接受修改</button>
+                            <button id="rejectDiffBtn" class="btn btn-reject">✗ 拒绝修改</button>
+                        </div>
+                    </div>
+                    <div id="diffRevisionNote" class="diff-revision-note" style="display: none;">
+                        <strong>修改说明：</strong>
+                        <span id="diffRevisionNoteText"></span>
+                    </div>
+                    <div id="diffContent" class="diff-content"></div>
+                </div>
+                
+                <div class="editor-footer">
+                    <div class="content-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">字数</span>
+                            <span class="stat-value" id="wordCount">0</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-label">段落</span>
+                            <span class="stat-value" id="paragraphCount">0</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-label">阅读时长</span>
+                            <span class="stat-value" id="readingTime">0分钟</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+        <!-- 可拖动分隔条 -->
+        <div class="resizer" id="resizer"></div>
+        
+        <!-- 最右侧：AI助手区域（完整保留原有功能） -->
+        <aside class="ai-assistant-panel" id="aiAssistantPanel">
+                <div class="chat-header">
+                    <h2>💬 AI 助手</h2>
+                    <div class="chat-header-actions">
+                        <button id="settingsBtn" class="btn btn-small" title="系统设置">⚙️ 设置</button>
+                        <button id="clearHistoryBtn" class="btn btn-small">清空历史</button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Loading 状态 -->
+                    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">AI 正在思考中...</div>
+                    </div>
+                    
+                    <div class="welcome-message">
+                        <h2>👋 欢迎使用AI创作助手</h2>
+                        <p>请先选择或创建一个项目，然后告诉我你想做什么。</p>
+                        <div class="examples">
+                            <h3>💡 示例：</h3>
+                            <ul>
+                                <li>"创作一个中国神界的主角角色，保存到人物设定里"</li>
+                                <li>"列出所有人物设定文件"</li>
+                                <li>"读取第一章的内容"</li>
+                                <li>"写第三章"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <!-- 工具栏 -->
+                    <div class="chat-toolbar">
+                        <div class="toolbar-left">
+                            <button id="atFileBtn" class="btn-file-action" title="引用项目文件 (快捷键: @)">
+                                <span>@ 引用项目文件</span>
+                            </button>
+                            <button id="uploadFileBtn" class="btn-file-action" title="上传本地文件">
+                                <span>📤 上传文件</span>
+                            </button>
+                            <input type="file" id="fileUploadInput" accept=".txt,.md" style="display: none;" multiple>
+                        </div>
+                        <div class="toolbar-right">
+                            <button id="sendBtn" class="btn btn-primary">
+                                <span>发送</span>
+                                <span class="loading" style="display: none;">⏳ 处理中...</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 文件引用区域 -->
+                    <div class="file-reference-area" id="fileReferenceArea" style="display: none;">
+                        <div class="reference-header">
+                            <span>📎 已引用的文件</span>
+                            <button id="clearReferencesBtn" class="btn-text">清空</button>
+                        </div>
+                        <div class="reference-list" id="referenceList"></div>
+                    </div>
+                    
+                    <div class="input-group" style="position: relative;">
+                        <!-- @ 文件选择下拉菜单 -->
+                        <div id="atFileDropdown" class="at-file-dropdown" style="display: none;">
+                            <div class="at-file-search">
+                                <input type="text" id="atFileSearchInput" placeholder="搜索文件...">
+                            </div>
+                            <div class="at-file-list" id="atFileList">
+                                <!-- 动态生成 -->
+                            </div>
+                            <div class="at-file-hint">
+                                <span>↑↓ 选择</span>
+                                <span>Enter 确认</span>
+                                <span>Esc 取消</span>
+                            </div>
+                        </div>
+                        
+                        <textarea 
+                            id="chatInput" 
+                            placeholder="告诉我你想做什么... (输入 @ 引用项目文件)"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- 模态框：新建项目 -->
+    <div id="newProjectModal" class="modal">
+        <div class="modal-content">
+            <h2>📝 新建小说项目</h2>
+            <input type="text" id="newProjectName" placeholder="输入项目名称...">
+            <div class="modal-actions">
+                <button id="createProjectBtn" class="btn-primary">创建</button>
+                <button id="cancelProjectBtn" class="btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模态框：系统设置 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>⚙️ 系统设置</h2>
+                <button id="closeSettingsModal" class="btn-close">×</button>
+            </div>
+            
+            <!-- Tab 导航 -->
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="prompt">📝 提示词设置</button>
+                <button class="settings-tab" data-tab="api">🔌 API 配置</button>
+            </div>
+            
+            <!-- Tab 内容区域 -->
+            <div class="settings-tab-content">
+                <!-- 提示词设置 Tab -->
+                <div class="settings-panel active" data-panel="prompt">
+                    <div class="prompt-info">
+                        <p>⚠️ 编辑全局系统提示词，影响所有项目的 AI 行为</p>
+                    </div>
+                    
+                    <textarea id="systemPromptEditor" class="prompt-editor"></textarea>
+                    
+                    <div class="modal-actions">
+                        <button id="saveSystemPromptBtn" class="btn-primary">💾 保存提示词</button>
+                    </div>
+                </div>
+                
+                <!-- API 配置 Tab -->
+                <div class="settings-panel" data-panel="api">
+                    <div class="api-config-form">
+                        <div class="form-group">
+                            <label for="apiKey">API Key <span class="required">*</span></label>
+                            <div class="input-with-button">
+                                <input type="password" id="apiKey" class="form-input" placeholder="sk-your-api-key-here">
+                                <button type="button" id="toggleApiKeyBtn" class="toggle-visibility-btn" title="显示/隐藏">
+                                    <span class="eye-icon">👁️</span>
+                                </button>
+                            </div>
+                            <small class="form-hint">OpenAI API 密钥或兼容服务的密钥</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="apiBaseUrl">API Base URL <span class="required">*</span></label>
+                            <input type="text" id="apiBaseUrl" class="form-input" placeholder="https://api.openai.com/v1">
+                            <small class="form-hint">OpenAI官方或兼容服务的API地址</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="modelName">模型名称 <span class="required">*</span></label>
+                            <input type="text" id="modelName" class="form-input" placeholder="gpt-4">
+                            <small class="form-hint">例如：gpt-4, gpt-3.5-turbo, claude-3-opus 等</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="temperature">Temperature（创造性）</label>
+                            <input type="number" id="temperature" class="form-input" placeholder="0.8" step="0.1" min="0" max="1">
+                            <small class="form-hint">0-1之间，越高越有创造性（留空使用默认值0.8）</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="maxIterations">最大推理轮次</label>
+                            <input type="number" id="maxIterations" class="form-input" placeholder="留空=无限制">
+                            <small class="form-hint">限制AI思考的最大轮数（留空表示不限制）</small>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="saveApiConfigBtn" class="btn-primary">💾 保存配置</button>
+                        <button id="testApiBtn" class="btn-secondary">🔍 测试连接</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右键菜单 -->
+    <div id="contextMenu" class="context-menu" style="display: none;">
+        <div class="context-menu-item" data-action="newFile">
+            <span class="context-icon">📄</span>
+            <span>新建文件</span>
+        </div>
+        <div class="context-menu-item" data-action="newFolder">
+            <span class="context-icon">📁</span>
+            <span>新建文件夹</span>
+        </div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="rename">
+            <span class="context-icon">✏️</span>
+            <span>重命名</span>
+        </div>
+        <div class="context-menu-item context-menu-danger" data-action="delete">
+            <span class="context-icon">🗑️</span>
+            <span>删除</span>
+        </div>
+    </div>
+    
+    <!-- 输入对话框 -->
+    <div id="inputDialog" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="inputDialogTitle">请输入</h2>
+                <button id="closeInputDialog" class="btn-close">×</button>
+            </div>
+            <input type="text" id="inputDialogValue" class="modal-input" placeholder="请输入名称...">
+            <div class="modal-actions">
+                <button id="confirmInputBtn" class="btn-primary">确定</button>
+                <button id="cancelInputBtn" class="btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

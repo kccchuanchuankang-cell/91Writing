@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent配置文件",
+  "description": "通用Agent配置，支持多种场景和模型。所有配置项都可以通过环境变量覆盖。",
+  "version": "1.0.0",
+  "agents": {
+    "novel-writing": {
+      "name": "小说创作Agent",
+      "type": "function-calling",
+      "enabled": true,
+      "model": {
+        "provider": "openai",
+        "name": null,
+        "temperature": 0.8,
+        "maxTokens": null,
+        "streaming": true
+      },
+      "systemPromptFile": null,
+      "tools": {
+        "include": ["generate_long_content", "save_file", "read_file", "list_files", "update_file", "append_to_file", "move_file", "view_revision_history"],
+        "exclude": []
+      },
+      "behavior": {
+        "maxIterations": null,
+        "verbose": true,
+        "stopOnError": false,
+        "autoRetry": true,
+        "retryAttempts": 2
+      },
+      "constraints": {
+        "maxContentLength": 600,
+        "enforceToolSequence": false,
+        "requireConfirmation": false
+      }
+    },
+    "default": {
+      "name": "默认Agent",
+      "type": "function-calling",
+      "enabled": true,
+      "model": {
+        "provider": "openai",
+        "name": null,
+        "temperature": 0.7,
+        "maxTokens": null,
+        "streaming": true
+      },
+      "systemPromptFile": null,
+      "tools": {
+        "include": ["*"],
+        "exclude": []
+      },
+      "behavior": {
+        "maxIterations": null,
+        "verbose": true,
+        "stopOnError": false,
+        "autoRetry": true,
+        "retryAttempts": 2
+      },
+      "constraints": {
+        "maxContentLength": 600,
+        "enforceToolSequence": false,
+        "requireConfirmation": false
+      }
+    }
+  },
+  "globalSettings": {
+    "apiKeyEnv": "API_KEY",
+    "baseURLEnv": "API_BASE_URL",
+    "modelNameEnv": "MODEL_NAME",
+    "temperatureEnv": "TEMPERATURE",
+    "maxIterationsEnv": "MAX_ITERATIONS",
+    "verboseEnv": "VERBOSE",
+    "systemPromptFileEnv": "SYSTEM_PROMPT_FILE",
+    "defaultAgent": "novel-writing"
+  }
+}
+

@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "server-memory": {
+      "command": "npx",
+      "args": [
+        {
+          "mcpServers": {
+            "memory": {
+              "command": "npx",
+              "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+              ],
+              "enabled": true,
+              "description": "简单的内存键值存储"
+            }
+          },
+          "enabled": true
+        }
+      ],
+      "env": {
+        "key": "test"
+      },
+      "enabled": true
+    }
+  },
+  "enabled": true
+}

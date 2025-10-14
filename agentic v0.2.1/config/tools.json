@@ -1,0 +1,438 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "工具配置文件",
+  "description": "定义所有可用的AI工具，支持动态加载和注册",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "generate_long_content",
+      "enabled": true,
+      "category": "content_generation",
+      "description": "🚀 革命性工具！用于生成长章节（3000+ 字）。文件名格式：[标题].md（如果重复会自动添加编号）。参数是创作指令（prompt），不是完整内容。⚠️ prompt应简洁（100-300字符），避免包含复杂的换行、引号等特殊字符，否则可能导致JSON解析失败。工具内部自动调用 LLM 生成纯文本，实时聚合，自动分段保存。一次调用完成整章创作！",
+      "implementation": "file-operations.js:generateLongContentTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹。可选值：人物设定、世界观设定、章节内容、大纲、灵感记录、设定资料、创作笔记、项目根目录"
+          },
+          "title": {
+            "type": "string",
+            "description": "文件标题（如：第三章-临时工）"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "创作指令（如：基于第二章续写第三章，描写邹婉琳在驿站的第一天工作，约3000字，包含与程远、周凯的互动）"
+          },
+          "target_length": {
+            "type": "number",
+            "description": "目标字数（可选，默认 3000）",
+            "default": 3000
+          }
+        },
+        "required": ["type", "title", "prompt"]
+      }
+    },
+    {
+      "name": "save_file",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "保存内容到指定类型的文件夹。文件名格式：[标题].md（如果重复会自动添加编号）。⚠️ 重要限制：content 单次最多 600 字符（约 300 汉字），超过会导致 JSON 解析失败。长内容必须分段：1) 先用 save_file 保存前 600 字；2) 再用 append_to_file 多次追加，每次不超过 600 字。",
+      "implementation": "file-operations.js:saveFileTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹。可选值：人物设定、世界观设定、章节内容、大纲、灵感记录、设定资料、创作笔记、项目根目录"
+          },
+          "title": {
+            "type": "string",
+            "description": "文件标题"
+          },
+          "content": {
+            "type": "string",
+            "description": "文件内容（Markdown格式）。注意：单次最多 600 字，长内容需分段"
+          }
+        },
+        "required": ["type", "title", "content"]
+      }
+    },
+    {
+      "name": "read_file",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "读取指定文件的内容",
+      "implementation": "file-operations.js:readFileTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹。可选值：人物设定、世界观设定、章节内容、大纲、灵感记录、设定资料、创作笔记、项目根目录"
+          },
+          "filename": {
+            "type": "string",
+            "description": "文件名（完整文件名，包含扩展名）"
+          }
+        },
+        "required": ["type", "filename"]
+      }
+    },
+    {
+      "name": "list_files",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "列出指定类型文件夹中的所有文件",
+      "implementation": "file-operations.js:listFilesTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件夹类型名称，或'全部'查看所有文件夹"
+          }
+        },
+        "required": ["type"]
+      }
+    },
+    {
+      "name": "update_file",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "更新已有文件的内容。支持 diff 模式（精确替换某段文字）或 full 模式（替换整个文件）。每次更新会自动创建备份文件。",
+      "implementation": "file-operations.js:updateFileTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹。可选值：人物设定、世界观设定、章节内容、大纲、灵感记录、设定资料、创作笔记、项目根目录"
+          },
+          "filename": {
+            "type": "string",
+            "description": "要更新的文件名（完整文件名，包含扩展名）"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["diff", "full"],
+            "description": "更新模式：diff=精确替换某段文字，full=替换整个文件"
+          },
+          "old_string": {
+            "type": "string",
+            "description": "仅 diff 模式需要，要替换的原文，必须完全匹配（包括空格、换行）"
+          },
+          "new_string": {
+            "type": "string",
+            "description": "diff模式=替换后的新文，full模式=完整的新内容"
+          },
+          "revision_note": {
+            "type": "string",
+            "description": "修改说明（可选）"
+          }
+        },
+        "required": ["type", "filename", "mode", "new_string"]
+      }
+    },
+    {
+      "name": "append_to_file",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "追加内容到已有文件的末尾。⚠️ 重要限制：content 单次最多 600 字符（约 300 汉字），超过会导致 JSON 解析失败。长章节必须分多次追加，每次不超过 600 字。",
+      "implementation": "file-operations.js:appendToFileTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹。可选值：人物设定、世界观设定、章节内容、大纲、灵感记录、设定资料、创作笔记、项目根目录"
+          },
+          "filename": {
+            "type": "string",
+            "description": "文件名（完整文件名，包含扩展名）"
+          },
+          "content": {
+            "type": "string",
+            "description": "要追加的内容（单次最多 600 字）"
+          }
+        },
+        "required": ["type", "filename", "content"]
+      }
+    },
+    {
+      "name": "move_file",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "移动文件到另一个类型文件夹",
+      "implementation": "file-operations.js:moveFileTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "要移动的文件名（完整文件名，包含扩展名）"
+          },
+          "from_type": {
+            "type": "string",
+            "enum": ["人物设定", "世界观设定", "章节内容", "大纲", "灵感记录", "设定资料", "创作笔记"],
+            "description": "源文件夹类型"
+          },
+          "to_type": {
+            "type": "string",
+            "enum": ["人物设定", "世界观设定", "章节内容", "大纲", "灵感记录", "设定资料", "创作笔记"],
+            "description": "目标文件夹类型"
+          }
+        },
+        "required": ["filename", "from_type", "to_type"]
+      }
+    },
+    {
+      "name": "view_revision_history",
+      "enabled": true,
+      "category": "file_operations",
+      "description": "查看文件的修改历史记录",
+      "implementation": "file-operations.js:viewRevisionHistoryTool",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹。可选值：人物设定、世界观设定、章节内容、大纲、灵感记录、设定资料、创作笔记、项目根目录"
+          },
+          "filename": {
+            "type": "string",
+            "description": "文件名（完整文件名，包含扩展名）"
+          }
+        },
+        "required": ["type", "filename"]
+      }
+    },
+    {
+      "name": "create_task_list",
+      "enabled": true,
+      "category": "task_planning",
+      "description": "创建任务分解清单。当用户要求执行复杂任务时（如：创建完整小说、重构项目、批量操作等），使用此工具将任务分解为多个可执行的子任务。适用场景：需要多步骤完成的复杂任务、需要创建多个相关文件、需要按顺序执行的多个操作、用户明确要求看到任务清单",
+      "implementation": "task-planning.js:createTaskList",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "任务清单的标题，概括整体任务"
+          },
+          "description": {
+            "type": "string",
+            "description": "任务的整体描述，说明要实现什么"
+          },
+          "tasks": {
+            "type": "array",
+            "description": "子任务列表，按执行顺序排列",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "任务ID，使用数字（1, 2, 3...）"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "任务标题，简短描述"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "任务详细描述，包含具体操作"
+                }
+              },
+              "required": ["id", "title", "description"]
+            }
+          }
+        },
+        "required": ["title", "tasks"]
+      }
+    },
+    {
+      "name": "update_task_status",
+      "enabled": true,
+      "category": "task_planning",
+      "description": "更新任务清单中某个子任务的状态。在完成或开始一个子任务时调用。状态：pending待执行、in_progress执行中、completed已完成、failed失败",
+      "implementation": "task-planning.js:updateTaskStatus",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "description": "要更新的任务ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed"],
+            "description": "新的任务状态"
+          },
+          "note": {
+            "type": "string",
+            "description": "状态更新说明（可选）"
+          }
+        },
+        "required": ["taskId", "status"]
+      }
+    },
+    {
+      "name": "get_current_tasks",
+      "enabled": true,
+      "category": "task_planning",
+      "description": "获取当前项目的任务清单，查看所有任务的状态和进度。适用场景：用户询问当前有哪些任务、需要查看任务进度、继续未完成的任务前查看状态",
+      "implementation": "task-planning.js:getCurrentTasks",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "clear_task_list",
+      "enabled": true,
+      "category": "task_planning",
+      "description": "清除当前的任务清单。通常在所有任务完成后，或需要开始新的任务时使用",
+      "implementation": "task-planning.js:clearTaskList",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "search_files",
+      "enabled": true,
+      "category": "file_search",
+      "description": "按文件名搜索项目中的文件，支持模糊匹配和通配符。适用于：不确定文件位置、查找包含特定关键词的文件、查找某类文件。支持精确匹配（完整文件名）、模糊匹配（关键词）、通配符（*）",
+      "implementation": "file-search.js:searchFiles",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "搜索模式，可以是完整文件名、关键词或通配符"
+          },
+          "folder": {
+            "type": "string",
+            "description": "限制搜索范围的文件夹（可选）"
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "最多返回的结果数量（默认 20）"
+          }
+        },
+        "required": ["pattern"]
+      }
+    },
+    {
+      "name": "search_file_content",
+      "enabled": true,
+      "category": "file_search",
+      "description": "在文件内容中搜索关键词。适用于：查找提到某个人物的所有章节、查找包含某个情节的文件、查找某个设定的引用位置。只搜索 .md 文件，跳过备份和历史文件",
+      "implementation": "file-search.js:searchFileContent",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "description": "要搜索的关键词或短语"
+          },
+          "folder": {
+            "type": "string",
+            "description": "限制搜索范围的文件夹（可选）"
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "最多返回的结果数量（默认 10）"
+          }
+        },
+        "required": ["keyword"]
+      }
+    },
+    {
+      "name": "read_file_by_keyword",
+      "enabled": true,
+      "category": "file_search",
+      "description": "⭐智能读取文件！只返回包含关键词的相关片段，可节省 80-90% 的上下文空间。适用于长文档（3000+ 字）。比 read_file 更智能，比 search_file_content 更精确",
+      "implementation": "file-search.js:readFileByKeyword",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹"
+          },
+          "filename": {
+            "type": "string",
+            "description": "文件名（完整文件名，包含扩展名）"
+          },
+          "keyword": {
+            "type": "string",
+            "description": "要搜索的关键词"
+          },
+          "contextLength": {
+            "type": "number",
+            "description": "每个片段的上下文长度（字符数，默认 300）"
+          },
+          "maxSegments": {
+            "type": "number",
+            "description": "最多返回的片段数量（默认 5）"
+          }
+        },
+        "required": ["type", "filename", "keyword"]
+      }
+    },
+    {
+      "name": "read_file_lines",
+      "enabled": true,
+      "category": "file_search",
+      "description": "读取文件的指定行范围。适用于精确定位读取，配合 read_file_by_keyword 使用效果更好",
+      "implementation": "file-search.js:readFileLines",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "文件所在的文件夹"
+          },
+          "filename": {
+            "type": "string",
+            "description": "文件名（完整文件名，包含扩展名）"
+          },
+          "startLine": {
+            "type": "number",
+            "description": "起始行号（从 1 开始）"
+          },
+          "endLine": {
+            "type": "number",
+            "description": "结束行号"
+          }
+        },
+        "required": ["type", "filename", "startLine", "endLine"]
+      }
+    }
+  ],
+  "toolCategories": {
+    "content_generation": {
+      "name": "内容生成",
+      "description": "用于生成长篇内容的工具",
+      "priority": 1
+    },
+    "file_operations": {
+      "name": "文件操作",
+      "description": "用于文件读写、管理的工具",
+      "priority": 2
+    },
+    "task_planning": {
+      "name": "任务规划",
+      "description": "用于复杂任务分解和进度跟踪的工具",
+      "priority": 0
+    },
+    "file_search": {
+      "name": "文件搜索",
+      "description": "用于搜索文件名和文件内容的工具",
+      "priority": 1
+    }
+  }
+}
+
