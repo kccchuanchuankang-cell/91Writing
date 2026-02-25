@@ -2135,10 +2135,12 @@ import '@wangeditor/editor/dist/css/style.css'
 import apiService from '../services/api.js'
 import billingService from '../services/billing.js'
 import { useNovelStore } from '../stores/novel.js'
+import { useCloudSync } from '../services/useCloudSync.js'
 
 const route = useRoute()
 const router = useRouter()
 const novelStore = useNovelStore()
+const cloudSync = useCloudSync()
 
 // API服务实例已经在api.js中创建并导出
 
@@ -3225,6 +3227,9 @@ const getDefaultPrompts = () => {
 const savePrompts = () => {
   try {
     localStorage.setItem('prompts', JSON.stringify(availablePrompts.value))
+    // Sync prompts to cloud if allowed/needed
+    // Usually handled by the main prompts library but here for consistency
+    cloudSync.saveConfig('prompts', availablePrompts.value)
   } catch (error) {
     console.error('保存提示词失败:', error)
   }
@@ -7631,6 +7636,13 @@ const saveNovelData = () => {
     novels.push(novelData)
   }
   localStorage.setItem('novels', JSON.stringify(novels))
+  
+  // Background Sync to Backend Server
+  // We fire and forget this so it doesn't block the UI
+  cloudSync.saveNovel(novelData).catch(err => {
+    // We already log this in cloudSync, but could also quietly retry later
+    console.warn('Background sync queued until network restores');
+  });
 }
 
 // 初始化

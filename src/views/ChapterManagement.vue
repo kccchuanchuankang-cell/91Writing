@@ -278,8 +278,10 @@ import {
   CopyDocument, ArrowUp, ArrowDown, Delete 
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { useCloudSync } from '../services/useCloudSync'
 
 const router = useRouter()
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const selectedNovelId = ref(null)
@@ -406,6 +408,8 @@ const saveChaptersToNovel = () => {
       novels[novelIndex].updatedAt = new Date()
       
       localStorage.setItem('novels', JSON.stringify(novels))
+      // Sync novels to cloud
+      cloudSync.saveConfig('novels', novels)
       
       // 同步更新本地的novels数据
       loadNovels()
@@ -471,6 +475,10 @@ const deleteChapter = (chapter) => {
       chapters.value.splice(index, 1)
       // 保存到localStorage
       saveChaptersToNovel()
+      // Sync deletion to cloud
+      cloudSync.deleteChapter(chapter.id).catch(err => {
+          console.error('Failed to delete chapter from cloud:', err)
+      })
       ElMessage.success('章节删除成功')
     }
   })

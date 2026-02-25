@@ -16,7 +16,7 @@ export const announcements = [
 - [本地部署教程](https://www.bilibili.com/video/BV1AYKgzAEne)
 
 ### 💡 快速开始
-1. 选择 **91写作官方API** (推荐新手)
+1. 选择 **AI写作官方API** (推荐新手)
 2. 购买API密钥并输入
 3. 选择合适的AI模型
 
@@ -39,7 +39,7 @@ export const announcements = [
 ## ✨ v0.7.0 更新内容
 
 ### 🔧 API配置优化
-- **优化API配置新增官方默认API**: 新增91写作官方API服务，按次计费，价格透明
+- **优化API配置新增官方默认API**: 新增AI写作官方API服务，按次计费，价格透明
 - **自定义API配置**: 支持所有OpenAI格式的API接口
 - **智能配置向导**: 分为新手和高级用户模式，操作更简单
 
@@ -76,7 +76,7 @@ export const announcements = [
   },
   {
     id: 'v0.6.0',
-    version: '0.6.0', 
+    version: '0.6.0',
     title: '🔧 系统优化更新',
     date: '2024-01-15',
     priority: 0,
@@ -121,11 +121,11 @@ export function getAnnouncementByVersion(version) {
 export function hasNewAnnouncement() {
   const lastReadVersion = localStorage.getItem('lastReadAnnouncementVersion')
   const latestAnnouncement = getLatestAnnouncement()
-  
+
   if (!lastReadVersion) {
     return true
   }
-  
+
   return lastReadVersion !== latestAnnouncement.version
 }
 

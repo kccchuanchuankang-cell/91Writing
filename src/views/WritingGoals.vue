@@ -425,8 +425,10 @@ import {
   MoreFilled, Edit, VideoPause, Delete
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useCloudSync } from '../services/useCloudSync'
 
 // 响应式数据
+const cloudSync = useCloudSync()
 const goals = ref([])
 const showCreateDialog = ref(false)
 const showProgressDialog = ref(false)
@@ -485,10 +487,11 @@ const initializeDefaultGoals = () => {
   saveGoalsToStorage()
 }
 
-// 保存数据到localStorage
 const saveGoalsToStorage = () => {
   try {
     localStorage.setItem('writingGoals', JSON.stringify(goals.value))
+    // Sync to cloud
+    cloudSync.saveConfig('writingGoals', goals.value)
     // 通知其他页面数据已更新
     if (window.refreshHomeData) {
       window.refreshHomeData()

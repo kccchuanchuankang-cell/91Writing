@@ -1,29 +1,42 @@
-# 多阶段构建 Dockerfile
-FROM node:18-alpine AS base
+# 多阶段构建 Dockerfile - 统一全栈版本
+
+# 阶段1: 构建前端
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app
-# 复制package文件
 COPY package*.json pnpm-lock.yaml ./
-# 安装pnpm
-RUN npm install -g pnpm
-
-# 开发环境
-FROM base AS development
-RUN pnpm install
-COPY . .
-EXPOSE 3000
-CMD ["pnpm", "dev", "--host", "0.0.0.0"]
-
-# 构建阶段
-FROM base AS builder
-RUN pnpm install
+RUN npm install -g pnpm && pnpm install
 COPY . .
 RUN pnpm build
 
-# 生产环境
-FROM nginx:alpine AS production
-# 复制自定义nginx配置
-COPY nginx.conf /etc/nginx/nginx.conf
-# 复制构建产物
-COPY --from=builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"] 
+# 阶段2: 最终运行镜像
+FROM node:18-alpine
+WORKDIR /app
+
+# 安装 pnpm (后端可能用到)
+RUN npm install -g pnpm
+
+# 复制后端代码和依赖
+COPY server/package*.json ./server/
+RUN cd server && npm install
+
+COPY server/ ./server/
+
+# 复制前端编译产物到后端托管目录
+COPY --from=frontend-builder /app/dist ./server/dist
+
+# 配置数据库持久化路径
+RUN mkdir -p /app/data
+# 默认指向持久化目录
+ENV DATABASE_URL="file:/app/data/dev.db"
+ENV NODE_ENV=production
+ENV PORT=3001
+
+# 生成 Prisma 客户端并初始化数据库
+WORKDIR /app/server
+RUN npx prisma generate
+
+# 暴露端口
+EXPOSE 3001
+
+# 启动脚本：确保运行迁移并启动服务器
+CMD ["sh", "-c", "npx prisma migrate deploy && node index.js"]

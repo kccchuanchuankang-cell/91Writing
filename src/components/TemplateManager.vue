@@ -288,8 +288,10 @@
 import { ref, computed, reactive } from 'vue'
 import { useNovelStore } from '@/stores/novel'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useCloudSync } from '../services/useCloudSync'
 
 const novelStore = useNovelStore()
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const templateFormRef = ref()
@@ -375,6 +377,7 @@ const addTemplate = async () => {
     
     customTemplates.push(template)
     localStorage.setItem('customTemplates', JSON.stringify(customTemplates))
+    cloudSync.saveConfig('customTemplates', customTemplates)
     
     ElMessage.success('模板创建成功')
     resetForm()
@@ -446,6 +449,7 @@ const saveEdit = async () => {
       }
       
       localStorage.setItem('customTemplates', JSON.stringify(customTemplates))
+      cloudSync.saveConfig('customTemplates', customTemplates)
       ElMessage.success('模板更新成功')
       showEditDialog.value = false
     }
@@ -469,6 +473,7 @@ const deleteTemplate = async (id) => {
     const customTemplates = JSON.parse(localStorage.getItem('customTemplates') || '[]')
     const filteredTemplates = customTemplates.filter(t => t.id !== id)
     localStorage.setItem('customTemplates', JSON.stringify(filteredTemplates))
+    cloudSync.saveConfig('customTemplates', filteredTemplates)
     
     ElMessage.success('删除成功')
   } catch {

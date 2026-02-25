@@ -590,8 +590,10 @@ import {
   Close, DocumentCopy, Loading, Check, MagicStick, Refresh, View, Edit
 } from '@element-plus/icons-vue'
 import { useNovelStore } from '@/stores/novel'
+import { useCloudSync } from '../services/useCloudSync.js'
 
 const novelStore = useNovelStore()
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const uploadedFile = ref(null)
@@ -1514,6 +1516,8 @@ const regenerateChapterSummary = async () => {
 const saveSummaryPromptTemplate = () => {
   try {
     localStorage.setItem('chapterSummaryPromptTemplate', summaryPromptTemplate.value)
+    // Sync to cloud
+    cloudSync.saveConfig('chapterSummaryPromptTemplate', summaryPromptTemplate.value)
   } catch (error) {
     console.error('保存提示词模板失败:', error)
   }

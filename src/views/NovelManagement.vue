@@ -548,8 +548,10 @@ import {
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import apiService from '@/services/api.js'
+import { useCloudSync } from '../services/useCloudSync'
 
 const router = useRouter()
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const statusFilter = ref('all')
@@ -611,6 +613,8 @@ const loadNovels = () => {
 const saveNovels = () => {
   try {
     localStorage.setItem('novels', JSON.stringify(novels.value))
+    // Trigger generic sync for the list (simple way to ensure list stays synced)
+    cloudSync.saveConfig('novels', novels.value)
   } catch (error) {
     console.error('保存小说数据失败:', error)
     ElMessage.error('保存数据失败')
@@ -791,6 +795,8 @@ const updateGenreUsageCount = (genreCode) => {
       if (genreIndex > -1) {
         genres[genreIndex].usageCount = (genres[genreIndex].usageCount || 0) + 1
         localStorage.setItem('novelGenres', JSON.stringify(genres))
+        // Sync to cloud
+        cloudSync.saveConfig('novelGenres', genres)
         console.log(`类型 ${genreCode} 使用计数更新为:`, genres[genreIndex].usageCount)
       }
     }
@@ -1113,6 +1119,10 @@ const deleteNovel = async (novel) => {
       novels.value.splice(index, 1)
       // 保存到localStorage
       saveNovels()
+      // Sync deletion to cloud
+      cloudSync.deleteNovel(novel.id).catch(err => {
+          console.error('Failed to delete novel from cloud:', err)
+      })
       ElMessage.success('删除成功')
     }
   } catch (error) {

@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  novels    Novel[]
+  prompts   Prompt[]
+  configs   Config[]
+}
+
+model Novel {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  cover       String?
+  author      String?
+  tags        String?  // JSON stringified array of tags
+  status      String   @default("draft") // draft, ongoing, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  chapters    Chapter[]
+}
+
+model Chapter {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  summary     String?
+  wordCount   Int      @default(0)
+  status      String   @default("draft") // draft, completed, published
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  novelId     String
+  novel       Novel    @relation(fields: [novelId], references: [id], onDelete: Cascade)
+}
+
+model Prompt {
+  id          String   @id @default(uuid())
+  name        String
+  content     String
+  category    String
+  tags        String?  // JSON string
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Config {
+  id          String   @id @default(uuid())
+  key         String
+  value       String   // JSON stringified value
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+}

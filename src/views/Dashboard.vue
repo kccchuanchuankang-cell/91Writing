@@ -3,7 +3,7 @@
     <!-- 侧边栏 -->
     <div class="sidebar" :class="{ 'collapsed': isCollapse }">
       <div class="logo">
-        <h2>📚 91写作</h2>
+        <h2>📚 AI写作</h2>
       </div>
       
       <el-menu
@@ -96,7 +96,7 @@
               placeholder="选择模型"
             >
               <!-- 官方模型组 -->
-              <el-option-group label="🏢 91写作官方模型">
+              <el-option-group label="🏢 AI写作官方模型">
                 <el-option
                   v-for="model in officialModels"
                   :key="model.id"
@@ -146,6 +146,28 @@
             <el-icon><Key /></el-icon>
             {{ isApiConfigured ? 'API已配置' : 'API配置' }}
           </el-button>
+
+          <!-- 用户信息展示 -->
+          <el-dropdown class="user-dropdown" @command="handleAuthCommand">
+            <span class="el-dropdown-link user-info">
+              <el-avatar :size="28" :icon="User" />
+              <span class="username">{{ authStore.user?.username || '未登录' }}</span>
+              <el-icon class="el-icon--right"><arrow-down /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item v-if="cloudSync.isSyncing.value" disabled>
+                  <el-icon class="is-loading"><Loading /></el-icon> 云端数据同步中...
+                </el-dropdown-item>
+                <el-dropdown-item v-else command="sync">
+                  <el-icon><Refresh /></el-icon> 手动同步云端数据
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  <el-icon><SwitchButton /></el-icon> 退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
       
@@ -176,16 +198,20 @@ import { useNovelStore } from '@/stores/novel'
 import { 
   House, Document, ChatLineSquare, Collection, Notebook, Aim, 
   CreditCard, Setting, Key, Tools, EditPen, DataAnalysis,
-  Expand, Fold, Bell 
+  Expand, Fold, Bell, User, ArrowDown, SwitchButton, Refresh, Loading
 } from '@element-plus/icons-vue'
 import ApiConfig from '@/components/ApiConfig.vue'
 import AnnouncementDialog from '@/components/AnnouncementDialog.vue'
 import { getLatestAnnouncement } from '@/config/announcements.js'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
+import { useCloudSync } from '@/services/useCloudSync'
 
 const router = useRouter()
 const route = useRoute()
 const novelStore = useNovelStore()
+const authStore = useAuthStore()
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const isCollapse = ref(false)
@@ -362,6 +388,28 @@ const handleAnnouncementClose = () => {
   showAnnouncement.value = false
 }
 
+// 认证与同步相关功能
+const handleAuthCommand = async (command) => {
+  if (command === 'logout') {
+    ElMessageBox.confirm('确定要退出登录并清除本地缓存数据吗？', '提示', {
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }).then(() => {
+      authStore.logout()
+      novelStore.$reset()
+      router.push('/login')
+    }).catch(() => {})
+  } else if (command === 'sync') {
+    const success = await cloudSync.fetchAllData()
+    if (success) {
+      ElMessage.success('云端数据同步完成')
+    } else {
+      ElMessage.error(cloudSync.syncError.value || '同步失败')
+    }
+  }
+}
+
 // 模型相关功能
 const handleModelChange = (modelId) => {
   try {
@@ -397,8 +445,10 @@ const handleModelChange = (modelId) => {
       
       // 保存配置类型
       localStorage.setItem('apiConfigType', 'official')
+      cloudSync.saveConfig('apiConfigType', 'official')
       // 保存官方配置
       localStorage.setItem('officialApiConfig', JSON.stringify(newConfig))
+      cloudSync.saveConfig('officialApiConfig', newConfig)
       
     } else if (isCustomModel) {
       console.log('选择了自定义模型，切换到自定义配置') // 调试日志
@@ -423,8 +473,10 @@ const handleModelChange = (modelId) => {
       
       // 保存配置类型
       localStorage.setItem('apiConfigType', 'custom')
+      cloudSync.saveConfig('apiConfigType', 'custom')
       // 保存自定义配置
       localStorage.setItem('customApiConfig', JSON.stringify(newConfig))
+      cloudSync.saveConfig('customApiConfig', newConfig)
       
     } else {
       console.error('未知的模型类型:', modelId)
@@ -522,14 +574,28 @@ const handleStorageChange = (event) => {
 }
 
 // 组件挂载时初始化
-onMounted(() => {
+onMounted(async () => {
+  // Check if authenticated
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+
+  // Fetch updated profile
+  await authStore.fetchUserProfile()
+  
+  // Trigger initial background sync
+  cloudSync.fetchAllData().then(success => {
+    if (success) console.log('Initial dashboard data sync completed.');
+  })
+
   initializeModelSelector()
   // 监听localStorage变化
   window.addEventListener('storage', handleStorageChange)
   
   // 手动触发一次检查（处理同页面内的变化）
   const checkConfigChange = () => {
-    const currentType = localStorage.getItem('apiConfigType')
+    const currentType = localStorage.getItem('apiConfigType') || 'official'
     if (currentType !== configType.value) {
       console.log('检测到配置类型变化:', configType.value, '->', currentType)
       initializeModelSelector()

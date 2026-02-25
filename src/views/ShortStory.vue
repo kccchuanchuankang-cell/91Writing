@@ -837,13 +837,19 @@
 <script setup>
 import { ref, reactive, computed, shallowRef, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { MagicStick, Refresh, EditPen, Download, Check, Loading, Plus, Setting, List, DocumentCopy, Switch, Delete, Search, InfoFilled } from '@element-plus/icons-vue'
+import { 
+  Plus, Edit, Delete, Share, Download, Setting, Document,
+  ArrowRight, VideoPlay, CopyDocument, Refresh, Search, Check, MagicStick, VideoPause, Brush, Connection,
+  List, InfoFilled, Loading, DocumentCopy, Switch
+} from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
-import { useNovelStore } from '@/stores/novel'
+import { useNovelStore } from '../stores/novel'
 import { useRouter } from 'vue-router'
+import { useCloudSync } from '../services/useCloudSync'
 
 const novelStore = useNovelStore()
+const cloudSync = useCloudSync()
 const router = useRouter()
 
 // 模块切换
@@ -1861,6 +1867,8 @@ const loadConfigData = () => {
 const saveConfigData = () => {
   try {
     localStorage.setItem('shortStoryConfig', JSON.stringify(configData))
+    // Sync to cloud
+    cloudSync.saveConfig('shortStoryConfig', configData)
     ElMessage.success('配置保存成功！')
     showConfigManager.value = false
   } catch (error) {
@@ -1897,6 +1905,8 @@ const removeWritingStyle = (index) => {
 const saveWritingStyleConfig = () => {
   try {
     localStorage.setItem('shortStoryConfig', JSON.stringify(configData))
+    // Sync to cloud
+    cloudSync.saveConfig('shortStoryConfig', configData)
     ElMessage.success('文风配置保存成功！')
     showWritingStyleManager.value = false
   } catch (error) {
@@ -1952,6 +1962,8 @@ const loadPrompts = () => {
         prompts.push(...defaultShortStoryPrompts)
         // 保存更新后的提示词
         localStorage.setItem('prompts', JSON.stringify(prompts))
+        // Sync to cloud
+        cloudSync.saveConfig('prompts', prompts)
         console.log('已添加默认短篇小说提示词')
       }
       availablePrompts.value = prompts
@@ -1960,6 +1972,8 @@ const loadPrompts = () => {
       const defaultPrompts = getDefaultShortStoryPrompts()
       availablePrompts.value = defaultPrompts
       localStorage.setItem('prompts', JSON.stringify(defaultPrompts))
+      // Sync to cloud
+      cloudSync.saveConfig('prompts', defaultPrompts)
     }
     console.log('短篇小说模块加载提示词数据:', availablePrompts.value.length)
   } catch (error) {

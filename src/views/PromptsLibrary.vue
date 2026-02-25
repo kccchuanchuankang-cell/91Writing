@@ -314,8 +314,10 @@ import {
   Plus, Search, MoreFilled, Edit, CopyDocument, 
   Delete, Upload, UploadFilled
 } from '@element-plus/icons-vue'
+import { useCloudSync } from '../services/useCloudSync'
 
 // 响应式数据
+const cloudSync = useCloudSync()
 const activeCategory = ref('all')
 const searchKeyword = ref('')
 const showAddDialog = ref(false)
@@ -438,6 +440,10 @@ const deletePrompt = async (prompt) => {
     if (index > -1) {
       prompts.value.splice(index, 1)
       savePrompts()
+      // Async sync to cloud
+      if (typeof prompt.id !== 'number') {
+        cloudSync.deletePrompt(prompt.id)
+      }
       ElMessage.success('删除成功')
     }
   } catch (error) {
@@ -545,6 +551,9 @@ const savePrompt = async () => {
     showAddDialog.value = false
     resetForm()
     savePrompts()
+    
+    // Async sync to cloud
+    cloudSync.savePrompt(editingPrompt.value ? { ...promptForm.value, id: editingPrompt.value.id } : prompts.value[prompts.value.length - 1])
   } catch (error) {
     // 验证失败
   }
@@ -694,6 +703,9 @@ const confirmImport = () => {
   
   // 保存到本地存储
   savePrompts()
+  
+  // Sync all new prompts to cloud
+  newPrompts.forEach(p => cloudSync.savePrompt(p))
   
   ElMessage.success(`成功导入 ${newPrompts.length} 个提示词`)
   
@@ -1331,6 +1343,8 @@ const getDefaultPrompts = () => {
 const savePrompts = () => {
   try {
     localStorage.setItem('prompts', JSON.stringify(prompts.value))
+    // Sync to cloud
+    cloudSync.saveConfig('prompts', prompts.value)
   } catch (error) {
     console.error('保存提示词失败:', error)
   }

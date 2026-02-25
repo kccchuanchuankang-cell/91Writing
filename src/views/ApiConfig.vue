@@ -435,6 +435,9 @@ import {
   Connection, Check, CircleCheck, Warning, Star, Plus,
   Delete, Download, Upload, RefreshLeft
 } from '@element-plus/icons-vue'
+import { useCloudSync } from '../services/useCloudSync'
+
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const activeTab = ref('1')
@@ -677,6 +680,8 @@ const saveAllConfigs = () => {
   
   // 保存到本地存储
   localStorage.setItem('aiApiConfigs', JSON.stringify(apiConfigs.value))
+  // Sync to cloud
+  cloudSync.saveConfig('aiApiConfigs', apiConfigs.value)
   ElMessage.success(`已保存 ${validConfigs.length} 个配置`)
 }
 

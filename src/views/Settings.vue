@@ -141,12 +141,12 @@
             <div class="about-content">
               <div class="app-info">
                 <div class="app-logo">
-                  <h1>📚 91写作</h1>
+                  <h1>📚 AI写作</h1>
                 </div>
                 <div class="app-details">
                   <p><strong>版本：</strong>v0.7.0</p>
                   <p><strong>更新时间：</strong>2025年7月9日</p>
-                  <p><strong>开发者：</strong>91写作团队</p>
+                  <p><strong>开发者：</strong>AI写作团队</p>
                   <p><strong>描述：</strong>基于AI技术的智能小说创作辅助工具，提供全方位的写作支持和创作灵感</p>
                 </div>
               </div>
@@ -335,8 +335,10 @@ import { ref, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Upload, Document, Setting, Delete, ChatLineSquare, Collection } from '@element-plus/icons-vue'
 import ApiConfig from '@/components/ApiConfig.vue'
+import { useCloudSync } from '../services/useCloudSync'
 
 // 响应式数据
+const cloudSync = useCloudSync()
 const activeTab = ref('api')
 const showImportDialog = ref(false)
 const importOptions = ref(['novels', 'prompts', 'novelGenres', 'writingGoals'])
@@ -406,7 +408,7 @@ const exportAllData = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `91写作-完整备份-${new Date().toISOString().split('T')[0]}.json`
+  a.download = `AI写作-完整备份-${new Date().toISOString().split('T')[0]}.json`
   a.click()
   URL.revokeObjectURL(url)
   
@@ -424,7 +426,7 @@ const exportNovels = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `91写作-小说数据-${new Date().toISOString().split('T')[0]}.json`
+  a.download = `AI写作-小说数据-${new Date().toISOString().split('T')[0]}.json`
   a.click()
   URL.revokeObjectURL(url)
   
@@ -442,7 +444,7 @@ const exportPrompts = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `91写作-提示词库-${new Date().toISOString().split('T')[0]}.json`
+  a.download = `AI写作-提示词库-${new Date().toISOString().split('T')[0]}.json`
   a.click()
   URL.revokeObjectURL(url)
   
@@ -460,7 +462,7 @@ const exportGenres = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `91写作-小说类型-${new Date().toISOString().split('T')[0]}.json`
+  a.download = `AI写作-小说类型-${new Date().toISOString().split('T')[0]}.json`
   a.click()
   URL.revokeObjectURL(url)
   
@@ -478,7 +480,7 @@ const exportSettings = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `91写作-系统设置-${new Date().toISOString().split('T')[0]}.json`
+  a.download = `AI写作-系统设置-${new Date().toISOString().split('T')[0]}.json`
   a.click()
   URL.revokeObjectURL(url)
   
@@ -524,25 +526,30 @@ const beforeImport = (file) => {
         // 根据选择导入数据
         if (importOptions.value.includes('novels') && data.novels) {
           localStorage.setItem('novels', JSON.stringify(data.novels))
+          cloudSync.saveConfig('novels', data.novels)
           importCount++
         }
         
         if (importOptions.value.includes('prompts') && data.prompts) {
           localStorage.setItem('prompts', JSON.stringify(data.prompts))
+          cloudSync.saveConfig('prompts', data.prompts)
           importCount++
         }
         
         if (importOptions.value.includes('novelGenres') && data.novelGenres) {
           localStorage.setItem('novelGenres', JSON.stringify(data.novelGenres))
+          cloudSync.saveConfig('novelGenres', data.novelGenres)
           importCount++
         }
         
         if (importOptions.value.includes('writingGoals')) {
           if (data.writingGoals) {
             localStorage.setItem('writingGoals', JSON.stringify(data.writingGoals))
+            cloudSync.saveConfig('writingGoals', data.writingGoals)
             importCount++
           } else if (data.goals) {
             localStorage.setItem('writingGoals', JSON.stringify(data.goals))
+            cloudSync.saveConfig('writingGoals', data.goals)
             importCount++
           }
         }
@@ -550,10 +557,12 @@ const beforeImport = (file) => {
         if (importOptions.value.includes('settings') && data.settings) {
           if (data.settings.apiConfig) {
             localStorage.setItem('api-config', JSON.stringify(data.settings.apiConfig))
+            cloudSync.saveConfig('api-config', data.settings.apiConfig)
             importCount++
           }
           if (data.settings.tokenUsage) {
             localStorage.setItem('token-usage', JSON.stringify(data.settings.tokenUsage))
+            cloudSync.saveConfig('token-usage', data.settings.tokenUsage)
             importCount++
           }
         }

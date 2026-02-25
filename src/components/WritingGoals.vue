@@ -302,9 +302,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Plus, Calendar, Clock, TrendCharts, Trophy, Edit, MoreFilled,
   VideoPause, Delete, Rank
 } from '@element-plus/icons-vue'
+import { useCloudSync } from '../services/useCloudSync.js'
+
+const cloudSync = useCloudSync()
 
 // 响应式数据
 const goals = ref([])
@@ -608,6 +610,8 @@ const onDrop = (event, targetIndex) => {
 
 const saveGoals = () => {
   localStorage.setItem('writingGoals', JSON.stringify(goals.value))
+  // Sync to cloud
+  cloudSync.saveConfig('writingGoals', goals.value)
   console.log('目标数据已保存:', goals.value)
   
   // 触发storage事件，通知其他页面数据已更新

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiService from '../services/api.js'
+import backendApi from '../services/backend.js'
 
 export const useNovelStore = defineStore('novel', () => {
   // 状态
@@ -19,13 +20,13 @@ export const useNovelStore = defineStore('novel', () => {
   const keywords = ref('')
   const isGenerating = ref(false)
   const corpus = ref([])
-  
 
-  
+
+
   // 写作工具数据
   const characters = ref([])
   const worldSettings = ref([])
-  
+
   // API配置 - 分离官方和自定义配置
   const officialApiConfig = ref({
     apiKey: '',
@@ -35,7 +36,7 @@ export const useNovelStore = defineStore('novel', () => {
     unlimitedTokens: false,
     temperature: 0.7
   })
-  
+
   const customApiConfig = ref({
     apiKey: '',
     baseURL: 'https://api.openai.com/v1',
@@ -44,22 +45,22 @@ export const useNovelStore = defineStore('novel', () => {
     unlimitedTokens: false,
     temperature: 0.7
   })
-  
+
   const currentConfigType = ref('official') // 'official' 或 'custom'
   const isApiConfigured = ref(false)
-  
+
   // 获取当前活动的API配置
   const getCurrentApiConfig = () => {
     return currentConfigType.value === 'official' ? officialApiConfig.value : customApiConfig.value
   }
-  
+
   // 初始化时检查API配置
   const initializeApiConfig = () => {
     try {
       // 加载配置类型
       const savedType = localStorage.getItem('apiConfigType') || 'official'
       currentConfigType.value = savedType
-      
+
       // 加载官方配置
       const savedOfficial = localStorage.getItem('officialApiConfig')
       if (savedOfficial) {
@@ -71,35 +72,35 @@ export const useNovelStore = defineStore('novel', () => {
           baseURL: 'https://ai.91hub.vip/v1' // 强制保持官方地址
         }
       }
-      
+
       // 加载自定义配置
       const savedCustom = localStorage.getItem('customApiConfig')
       if (savedCustom) {
         const config = JSON.parse(savedCustom)
         customApiConfig.value = { ...customApiConfig.value, ...config }
       }
-      
+
       // 使用当前配置类型的配置
       const currentConfig = getCurrentApiConfig()
       isApiConfigured.value = !!currentConfig.apiKey
       apiService.updateConfig(currentConfig)
-      
+
     } catch (error) {
       console.error('初始化API配置失败:', error)
     }
   }
-  
+
   // 立即执行初始化
   initializeApiConfig()
-  
+
   // 摘要功能
   const articleSummary = ref('')
   const isGeneratingSummary = ref(false)
-  
+
   // 写作建议
   const writingAdvice = ref('')
   const isGeneratingAdvice = ref(false)
-  
+
   // 文章统计信息
   const articleStats = ref({
     wordCount: 0,
@@ -169,7 +170,7 @@ export const useNovelStore = defineStore('novel', () => {
     const newChapters = []
     let match
     let index = 1
-    
+
     while ((match = chapterRegex.exec(outlineText)) !== null) {
       newChapters.push({
         id: index++,
@@ -179,7 +180,7 @@ export const useNovelStore = defineStore('novel', () => {
         isCompleted: false
       })
     }
-    
+
     chapters.value = newChapters
   }
 
@@ -214,7 +215,7 @@ export const useNovelStore = defineStore('novel', () => {
       const random = Math.floor(Math.random() * 10000)
       return timestamp + random
     }
-    
+
     aiChatHistory.value.push({
       id: generateUniqueId(),
       content: message,
@@ -254,7 +255,7 @@ export const useNovelStore = defineStore('novel', () => {
       const random = Math.floor(Math.random() * 10000)
       return timestamp + random
     }
-    
+
     corpus.value.push({
       id: generateUniqueId(),
       content: text,
@@ -272,7 +273,7 @@ export const useNovelStore = defineStore('novel', () => {
   const updateStats = async () => {
     // 从HTML中提取纯文本进行统计
     const content = currentNovel.value.replace(/<[^>]*>/g, '')
-    
+
     // 基础统计（立即更新）
     articleStats.value = {
       wordCount: content.length,
@@ -282,7 +283,7 @@ export const useNovelStore = defineStore('novel', () => {
       category: categorizeContent(content),
       score: calculateScore(content)
     }
-    
+
     // 如果配置了API且内容足够长，使用AI进行深度分析
     if (isApiConfigured.value && content.length > 100) {
       try {
@@ -292,12 +293,12 @@ export const useNovelStore = defineStore('novel', () => {
       }
     }
   }
-  
+
   // 使用AI进行深度文章分析
   const updateStatsWithAI = async (content) => {
     try {
       const analysis = await apiService.analyzeArticle(content)
-      
+
       // 更新AI分析结果
       articleStats.value = {
         ...articleStats.value,
@@ -317,11 +318,11 @@ export const useNovelStore = defineStore('novel', () => {
   const updateApiConfig = (config, configType = null) => {
     // 如果没有指定类型，使用当前配置类型
     const targetType = configType || currentConfigType.value
-    
+
     if (targetType === 'official') {
       // 官方配置：强制保持官方API地址
-      officialApiConfig.value = { 
-        ...officialApiConfig.value, 
+      officialApiConfig.value = {
+        ...officialApiConfig.value,
         ...config,
         baseURL: 'https://ai.91hub.vip/v1'
       }
@@ -329,18 +330,20 @@ export const useNovelStore = defineStore('novel', () => {
       // 自定义配置：允许所有参数更新
       customApiConfig.value = { ...customApiConfig.value, ...config }
     }
-    
+
     // 更新apiService配置为当前活动配置
     const currentConfig = getCurrentApiConfig()
     apiService.updateConfig(currentConfig)
     isApiConfigured.value = !!currentConfig.apiKey
   }
-  
+
   // 切换配置类型
   const switchConfigType = (type) => {
     currentConfigType.value = type
     localStorage.setItem('apiConfigType', type)
-    
+    // Sync to cloud
+    backendApi.post('/api/configs', { key: 'apiConfigType', value: type }).catch(() => { })
+
     // 更新apiService配置
     const currentConfig = getCurrentApiConfig()
     apiService.updateConfig(currentConfig)
@@ -364,7 +367,7 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     setGeneratingOutline(true)
     try {
       const result = await apiService.generateOutline(theme, keywords.value, selectedTemplate.value)
@@ -384,10 +387,10 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     setGeneratingOutline(true)
     setOutline('')
-    
+
     try {
       const result = await apiService.generateOutlineStream(theme, keywords.value, selectedTemplate.value, (chunk, fullContent) => {
         setOutline(fullContent)
@@ -408,7 +411,7 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     setGeneratingChapter(true)
     try {
       const previousContent = currentNovel.value.replace(/<[^>]*>/g, '')
@@ -437,9 +440,9 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     setAiChatting(true)
-    
+
     try {
       const response = await apiService.chatWithAI(message, aiChatHistory.value)
       addChatMessage(response, false)
@@ -467,11 +470,11 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     if (!currentNovel.value) {
       throw new Error('请先输入文章内容')
     }
-    
+
     isGeneratingSummary.value = true
     try {
       const content = currentNovel.value.replace(/<[^>]*>/g, '')
@@ -491,11 +494,11 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     if (!currentNovel.value) {
       throw new Error('请先输入文章内容')
     }
-    
+
     isGeneratingAdvice.value = true
     try {
       const content = currentNovel.value.replace(/<[^>]*>/g, '')
@@ -515,11 +518,11 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     if (corpus.value.length === 0) {
       throw new Error('请先添加语料库内容')
     }
-    
+
     setGenerating(true)
     try {
       const result = await apiService.generatePersonalizedContent(prompt, corpus.value)
@@ -538,7 +541,7 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     try {
       const result = await apiService.generateGeneralContent(keywords, template, outline, wordLimit)
       setGeneratedContent(result)
@@ -554,10 +557,10 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API密钥')
     }
-    
+
     setGenerating(true)
     setGeneratedContent('') // 清空之前的内容
-    
+
     try {
       const result = await apiService.generateGeneralContentStream(keywords, template, outline, wordLimit, (chunk, fullContent) => {
         // 实时更新生成的内容
@@ -621,18 +624,18 @@ export const useNovelStore = defineStore('novel', () => {
   const analyzeSentiment = (content) => {
     const positiveWords = ['快乐', '幸福', '美好', '成功', '胜利', '爱', '喜欢']
     const negativeWords = ['悲伤', '痛苦', '失败', '死亡', '恐惧', '愤怒', '绝望']
-    
+
     let positiveCount = 0
     let negativeCount = 0
-    
+
     positiveWords.forEach(word => {
       positiveCount += (content.match(new RegExp(word, 'g')) || []).length
     })
-    
+
     negativeWords.forEach(word => {
       negativeCount += (content.match(new RegExp(word, 'g')) || []).length
     })
-    
+
     if (positiveCount > negativeCount) return '积极'
     if (negativeCount > positiveCount) return '消极'
     return '中性'
@@ -662,21 +665,21 @@ export const useNovelStore = defineStore('novel', () => {
   // 计算文章评分
   const calculateScore = (content) => {
     let score = 50 // 基础分
-    
+
     // 根据字数调整分数
     if (content.length > 1000) score += 10
     if (content.length > 3000) score += 10
     if (content.length > 5000) score += 10
-    
+
     // 根据段落数调整分数
     const paragraphs = content.split('\n\n').filter(p => p.trim())
     if (paragraphs.length > 3) score += 5
     if (paragraphs.length > 6) score += 5
-    
+
     // 根据对话调整分数
     const dialogues = (content.match(/[""]/g) || []).length
     if (dialogues > 4) score += 5
-    
+
     return Math.min(100, score)
   }
 
@@ -688,11 +691,11 @@ export const useNovelStore = defineStore('novel', () => {
       traits: character.traitsInput ? character.traitsInput.split(',').map(t => t.trim()).filter(t => t) : []
     })
   }
-  
+
   const removeCharacter = (id) => {
     characters.value = characters.value.filter(char => char.id !== id)
   }
-  
+
   // 世界观设定管理方法
   const addWorldSetting = (setting) => {
     // 生成唯一ID，避免快速操作时ID重复
@@ -701,13 +704,13 @@ export const useNovelStore = defineStore('novel', () => {
       const random = Math.floor(Math.random() * 10000)
       return timestamp + random
     }
-    
+
     worldSettings.value.push({
       id: generateUniqueId(),
       ...setting
     })
   }
-  
+
   const removeWorldSetting = (id) => {
     worldSettings.value = worldSettings.value.filter(setting => setting.id !== id)
   }
@@ -726,10 +729,10 @@ export const useNovelStore = defineStore('novel', () => {
     if (!isApiConfigured.value) {
       throw new Error('请先配置API')
     }
-    
+
     try {
       isGenerating.value = true
-      
+
       // 如果提供了onChunk回调，使用流式API
       if (onChunk) {
         const result = await apiService.generateTextStream(prompt, {
@@ -737,14 +740,14 @@ export const useNovelStore = defineStore('novel', () => {
         }, (chunk, fullContent) => {
           onChunk(chunk)
         })
-        
+
         return result
       } else {
         // 否则使用流式API（不提供回调）
         const result = await apiService.generateTextStream(prompt, {
           type: 'content_generation'
         }, null)
-        
+
         return result
       }
     } catch (error) {
@@ -783,11 +786,11 @@ export const useNovelStore = defineStore('novel', () => {
     isGeneratingSummary,
     writingAdvice,
     isGeneratingAdvice,
-    
+
     // 计算属性
     wordCount,
     readingTime,
-    
+
     // 方法
     setCurrentNovel,
     setGeneratedContent,
@@ -816,7 +819,7 @@ export const useNovelStore = defineStore('novel', () => {
     removeWorldSetting,
     updateWorldSetting,
     updateStats,
-    
+
     // API相关方法
     updateApiConfig,
     switchConfigType,

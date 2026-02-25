@@ -1,3 +1,5 @@
+import backendApi from './backend';
+
 class BillingService {
   constructor() {
     this.initializeStorage()
@@ -59,22 +61,22 @@ class BillingService {
   calculateCost(model, inputTokens, outputTokens) {
     const pricing = this.getModelPricing()
     const modelPricing = pricing[model] || pricing['default']
-    
+
     const inputCost = (inputTokens / 1000) * modelPricing.input
     const outputCost = (outputTokens / 1000) * modelPricing.output
-    
+
     return inputCost + outputCost
   }
 
   // 估算prompt的token数量（粗略估算，1个中文字符约等于1.5个token）
   estimateTokens(text) {
     if (!text) return 0
-    
+
     // 简单的token估算逻辑
     const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length
     const englishWords = (text.match(/[a-zA-Z]+/g) || []).length
     const otherChars = text.length - chineseChars - englishWords
-    
+
     // 中文字符 * 1.5 + 英文单词 * 1.3 + 其他字符 * 0.5
     return Math.ceil(chineseChars * 1.5 + englishWords * 1.3 + otherChars * 0.5)
   }
@@ -95,6 +97,10 @@ class BillingService {
     const currentBalance = this.getAccountBalance()
     const newBalance = Math.max(0, currentBalance - amount)
     localStorage.setItem('account_balance', newBalance.toString())
+    // Sync to cloud
+    backendApi.post('/configs', { key: 'account_balance', value: newBalance.toString() }).catch(err => {
+      console.error('Failed to sync balance to cloud:', err)
+    })
     return newBalance
   }
 
@@ -103,6 +109,10 @@ class BillingService {
     const currentBalance = this.getAccountBalance()
     const newBalance = currentBalance + amount
     localStorage.setItem('account_balance', newBalance.toString())
+    // Sync to cloud
+    backendApi.post('/configs', { key: 'account_balance', value: newBalance.toString() }).catch(err => {
+      console.error('Failed to sync balance to cloud:', err)
+    })
     return newBalance
   }
 
@@ -111,7 +121,7 @@ class BillingService {
     try {
       const records = this.getBillingRecords()
       const cost = this.calculateCost(params.model, params.inputTokens, params.outputTokens)
-      
+
       const record = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
@@ -125,24 +135,28 @@ class BillingService {
         cost: cost,
         status: params.status || 'success'
       }
-      
+
       records.unshift(record) // 最新记录放在前面
-      
+
       // 只保留最近1000条记录
       if (records.length > 1000) {
         records.splice(1000)
       }
-      
+
       localStorage.setItem('billing_records', JSON.stringify(records))
-      
+      // Sync to cloud
+      backendApi.post('/configs', { key: 'billing_records', value: JSON.stringify(records) }).catch(err => {
+        console.error('Failed to sync billing records to cloud:', err)
+      })
+
       // 扣除费用
       this.deductBalance(cost)
-      
+
       // 更新统计信息
       this.updateUsageStats(params.inputTokens || 0, params.outputTokens || 0, cost)
-      
+
       console.log(`API调用记录：模型=${params.model}, 输入=${params.inputTokens}tokens, 输出=${params.outputTokens}tokens, 费用=¥${cost.toFixed(4)}`)
-      
+
       return record
     } catch (error) {
       console.error('记录API调用失败:', error)
@@ -165,13 +179,17 @@ class BillingService {
   updateUsageStats(inputTokens, outputTokens, cost) {
     try {
       const stats = JSON.parse(localStorage.getItem('token_usage_stats') || '{}')
-      
+
       stats.totalInputTokens = (stats.totalInputTokens || 0) + inputTokens
       stats.totalOutputTokens = (stats.totalOutputTokens || 0) + outputTokens
       stats.totalCost = (stats.totalCost || 0) + cost
       stats.lastUpdateDate = new Date().toISOString()
-      
+
       localStorage.setItem('token_usage_stats', JSON.stringify(stats))
+      // Sync to cloud
+      backendApi.post('/configs', { key: 'token_usage_stats', value: JSON.stringify(stats) }).catch(err => {
+        console.error('Failed to sync token stats to cloud:', err)
+      })
     } catch (error) {
       console.error('更新使用统计失败:', error)
     }
@@ -202,11 +220,11 @@ class BillingService {
   getTodayStats() {
     const records = this.getBillingRecords()
     const today = new Date().toDateString()
-    
-    const todayRecords = records.filter(record => 
+
+    const todayRecords = records.filter(record =>
       new Date(record.timestamp).toDateString() === today
     )
-    
+
     return {
       tokenCount: todayRecords.reduce((sum, record) => sum + record.totalTokens, 0),
       cost: todayRecords.reduce((sum, record) => sum + record.cost, 0),
@@ -218,16 +236,16 @@ class BillingService {
   getUsageTrend(days = 7) {
     const records = this.getBillingRecords()
     const trend = []
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date()
       date.setDate(date.getDate() - i)
       const dateString = date.toDateString()
-      
-      const dayRecords = records.filter(record => 
+
+      const dayRecords = records.filter(record =>
         new Date(record.timestamp).toDateString() === dateString
       )
-      
+
       trend.push({
         date: dateString,
         tokenCount: dayRecords.reduce((sum, record) => sum + record.totalTokens, 0),
@@ -235,7 +253,7 @@ class BillingService {
         requestCount: dayRecords.length
       })
     }
-    
+
     return trend
   }
 
@@ -245,13 +263,17 @@ class BillingService {
       const records = this.getBillingRecords()
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      
-      const filteredRecords = records.filter(record => 
+
+      const filteredRecords = records.filter(record =>
         new Date(record.timestamp) > thirtyDaysAgo
       )
-      
+
       localStorage.setItem('billing_records', JSON.stringify(filteredRecords))
-      
+      // Sync to cloud
+      backendApi.post('/api/configs', { key: 'billing_records', value: JSON.stringify(filteredRecords) }).catch(err => {
+        console.error('Failed to sync cleaned billing records to cloud:', err)
+      })
+
       console.log(`清理了 ${records.length - filteredRecords.length} 条过期记录`)
     } catch (error) {
       console.error('清理过期记录失败:', error)
@@ -262,14 +284,14 @@ class BillingService {
   exportBillingData(format = 'json') {
     const records = this.getBillingRecords()
     const stats = this.getUsageStats()
-    
+
     const exportData = {
       exportTime: new Date().toISOString(),
       accountBalance: this.getAccountBalance(),
       usageStats: stats,
       records: records
     }
-    
+
     if (format === 'json') {
       return JSON.stringify(exportData, null, 2)
     } else if (format === 'csv') {
@@ -280,7 +302,7 @@ class BillingService {
       })
       return csv
     }
-    
+
     return exportData
   }
 }

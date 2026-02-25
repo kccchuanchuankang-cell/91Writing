@@ -182,8 +182,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, Edit, Delete, Calendar, Document, MoreFilled, CopyDocument 
 } from '@element-plus/icons-vue'
+import { useCloudSync } from '../services/useCloudSync'
 
 // 响应式数据
+const cloudSync = useCloudSync()
 const genres = ref([])
 const showCreateDialog = ref(false)
 const editingGenre = ref(null)
@@ -326,6 +328,8 @@ const loadGenres = () => {
 const saveGenres = () => {
   try {
     localStorage.setItem('novelGenres', JSON.stringify(genres.value))
+    // Sync to cloud
+    cloudSync.saveConfig('novelGenres', genres.value)
     console.log('类型数据已保存:', genres.value)
   } catch (error) {
     console.error('保存类型数据失败:', error)

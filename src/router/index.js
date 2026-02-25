@@ -14,11 +14,18 @@ import GenreManagement from '../views/GenreManagement.vue'
 import ToolsLibrary from '../views/ToolsLibrary.vue'
 import ShortStory from '../views/ShortStory.vue'
 import BookAnalysis from '../views/BookAnalysis.vue'
+import Login from '../views/Login.vue' // Import Login view
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: Login
+  },
+  {
     path: '/',
     component: Dashboard,
+    meta: { requiresAuth: true }, // Mark dashboard routes as protected
     children: [
       {
         path: '',
@@ -87,11 +94,34 @@ const routes = [
       }
     ]
   }
-  ]
+]
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes
+})
+
+// Navigation Guard
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem('auth_token');
+
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // this route requires auth, check if logged in
+    // if not, redirect to login page.
+    if (!isAuthenticated) {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath } // Optional: Save the redirect URL
+      })
+    } else {
+      next() // proceed as planned
+    }
+  } else if (to.name === 'Login' && isAuthenticated) {
+    // If attempting to access login page while already authenticated, redirect to home
+    next({ name: 'HomePage' })
+  } else {
+    next() // Always call next()!
+  }
 })
 
 export default router

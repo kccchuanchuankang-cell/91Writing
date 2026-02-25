@@ -13,7 +13,7 @@
       <!-- 配置类型选择 -->
       <div class="config-type-selector">
         <el-radio-group v-model="configType" @change="onConfigTypeChange">
-          <el-radio-button label="official">🏢 91写作官方API</el-radio-button>
+          <el-radio-button label="official">🏢 AI写作官方API</el-radio-button>
           <el-radio-button label="custom">⚙️ 自定义API配置</el-radio-button>
         </el-radio-group>
       </div>
@@ -26,7 +26,7 @@
           <div v-if="configType === 'official'" class="config-tips official-tips">
             <h4>🏢 官方默认配置</h4>
             <div class="tips-content">
-              <p><strong>推荐新手使用</strong>，不会自己获取API和配置大模型的用户可以选择91写作官方推出的，API，只需输入密钥即可。采用<strong>按次计费</strong>模式，价格透明。</p>
+              <p><strong>推荐新手使用</strong>，不会自己获取API和配置大模型的用户可以选择AI写作官方推出的，API，只需输入密钥即可。采用<strong>按次计费</strong>模式，价格透明。</p>
               
                              <div class="model-info">
                  <h5>推荐模型：</h5>
@@ -321,8 +321,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useNovelStore } from '../stores/novel.js'
 import apiService from '../services/api.js'
+import { useCloudSync } from '../services/useCloudSync.js'
 
 const store = useNovelStore()
+const cloudSync = useCloudSync()
 const validating = ref(false)
 const customModelInput = ref('')
 const customModels = ref([])
@@ -429,6 +431,8 @@ const onConfigTypeChange = (type) => {
   const currentForm = type === 'official' ? officialForm : customForm
   store.updateApiConfig(currentForm, type)
   store.switchConfigType(type)
+  // Sync config type to cloud
+  cloudSync.saveConfig('apiConfigType', type)
 }
 
 // 官方配置相关方法
@@ -459,6 +463,8 @@ const saveOfficialConfig = async () => {
     if (isValid) {
       ElMessage.success('官方配置保存成功')
       localStorage.setItem('officialApiConfig', JSON.stringify(officialForm))
+      // Sync to cloud
+      cloudSync.saveConfig('officialApiConfig', officialForm)
     } else {
       ElMessage.error('API密钥验证失败，请检查配置')
     }
@@ -543,6 +549,8 @@ const removeCustomModel = (modelId) => {
 
 const saveCustomModels = () => {
   localStorage.setItem('customModels', JSON.stringify(customModels.value))
+  // Sync to cloud
+  cloudSync.saveConfig('customModels', customModels.value)
 }
 
 const loadCustomModels = () => {
@@ -572,6 +580,8 @@ const saveCustomConfig = async () => {
     if (isValid) {
       ElMessage.success('自定义配置保存成功')
       localStorage.setItem('customApiConfig', JSON.stringify(customForm))
+      // Sync to cloud
+      cloudSync.saveConfig('customApiConfig', customForm)
     } else {
       ElMessage.error('API密钥验证失败，请检查配置')
     }
