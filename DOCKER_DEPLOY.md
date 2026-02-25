@@ -7,34 +7,41 @@
 - Docker >= 20.10
 - Docker Compose >= 2.0
 
-## 快速启动（推荐）
+## 快速启动
 
-使用 Docker Compose 是最简单的方法，它会自动处理端口映射和数据持久化。
+本项目支持两种运行模式：**开发模式**（支持前端热重载）和 **生产模式**（全栈打包）。
+
+### 1. 开发模式 (Development)
+适用于修改代码并实时查看效果。
 
 ```bash
-# 构建并启动（包含前端构建和后端启动）
-docker-compose up -d --build
+# 启动开发环境 (前端: 3000, 后端: 3001)
+docker-compose --profile dev up -d
 
 # 查看日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
+docker-compose --profile dev logs -f
 ```
 
-服务启动后，可以通过 `http://localhost:3001` 访问完整应用。
+### 2. 生产模式 (Production)
+适用于稳定运行，前端将被打包进后端服务器中。
+
+```bash
+# 构建并启动应用 (仅需暴露 3001 端口)
+docker-compose --profile prod up -d --build
+
+# 停止服务
+docker-compose --profile prod down
+```
 
 ## 数据持久化
 
-为了防止容器重启或更新导致数据丢失，我们配置了挂载卷（Volumes）：
+无论使用何种模式，您的数据都存储在宿主机的 `./data` 文件夹中。
 
-- **数据库路径**：容器内的 `/app/data` 映射到宿主机的 `./data` 文件夹。
-- **持久化内容**：包含所有小说、章节、提示词配置、计费信息以及系统设置。
-
-> [!IMPORTANT]
-> 请定期备份宿主机的 `./data` 文件夹以确保数据安全。
+- **数据库路径**：容器内的 `/app/data` 映射到 `./data`。
+- **持久化内容**：小说、配置、计费信息等。
 
 ## 详细配置
+
 
 ### 单独使用 Docker 运行
 

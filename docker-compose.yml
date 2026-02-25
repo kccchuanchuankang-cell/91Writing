@@ -1,9 +1,41 @@
 services:
-  # AI 写作 - 全栈容器
-  ai-writing:
+  # --- 开发环境 (前端开发服务器，支持热重载) ---
+  app-dev:
     build:
       context: .
-      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev
+
+  # --- 开发环境 (后端服务) ---
+  server-dev:
+    build:
+      context: .
+      target: base
+    working_dir: /app/server
+    command: sh -c "npm install && npx prisma migrate deploy && node index.js"
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev
+
+  # --- 生产环境 (全栈合并容器) ---
+  app-prod:
+    build:
+      context: .
+      target: production
     ports:
       - "3001:3001"
     volumes:
@@ -17,3 +49,5 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    profiles:
+      - prod
