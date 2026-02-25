@@ -339,13 +339,20 @@ app.get("/api/health", (req, res) => {
 });
 
 
-// --- Catch-all route for SPA ---
-app.get("*", (req, res) => {
-    // If the request is for an API that doesn't exist, don't serve index.html
+// --- Catch-all middleware for SPA ---
+// This handles all non-API GET requests by serving index.html
+app.use((req, res) => {
+    // If the request is for an API that doesn't exist, return 404
     if (req.path.startsWith("/api/")) {
         return res.status(404).json({ error: "API route not found" });
     }
-    res.sendFile(path.join(distPath, "index.html"));
+
+    // Only serve index.html for GET requests (standard for SPAs)
+    if (req.method === 'GET') {
+        return res.sendFile(path.join(distPath, "index.html"));
+    }
+
+    res.status(404).json({ error: "Not Found" });
 });
 
 const port = process.env.PORT || 3001;

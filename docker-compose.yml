@@ -20,7 +20,7 @@ services:
       context: .
       target: base
     working_dir: /app/server
-    command: sh -c "npm install && npx prisma migrate deploy && node index.js"
+    command: sh -c "npm install && npx prisma db push --accept-data-loss && node index.js"
     ports:
       - "3001:3001"
     volumes:

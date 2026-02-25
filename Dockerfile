@@ -1,9 +1,8 @@
-# 多阶段构建 Dockerfile
-
 # --- 阶段 1: 基础环境 ---
 FROM node:18-alpine AS base
 WORKDIR /app
-RUN npm install -g pnpm
+# 安装 libc6-compat (Prisma 引擎在 Alpine 上需要)
+RUN apk add --no-cache libc6-compat && npm install -g pnpm
 COPY package*.json pnpm-lock.yaml ./
 
 # --- 阶段 2: 开发环境 (仅前端开发服务器) ---
@@ -23,8 +22,8 @@ RUN pnpm build
 FROM node:18-alpine AS production
 WORKDIR /app
 
-# 安装必要工具
-RUN apk add --no-cache curl && npm install -g pnpm
+# 安装必要工具 (Prisma 引擎在 Alpine 上需要 libc6-compat 和 openssl)
+RUN apk add --no-cache curl openssl libc6-compat && npm install -g pnpm
 
 # 复制后端代码和依赖
 COPY server/package*.json ./server/
@@ -46,5 +45,5 @@ RUN npx prisma generate
 
 EXPOSE 3001
 
-# 启动全栈服务
-CMD ["sh", "-c", "npx prisma migrate deploy && node index.js"]
+# 启动全栈服务 (使用 db push 确保数据库架构同步)
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node index.js"]
