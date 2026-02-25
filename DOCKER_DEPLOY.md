@@ -20,16 +20,22 @@ docker-compose --profile dev up -d
 
 # 查看日志
 docker-compose --profile dev logs -f
+
+# 停止并删除开发容器
+docker-compose --profile dev down
 ```
 
 ### 2. 生产模式 (Production)
 适用于稳定运行，前端将被打包进后端服务器中。
 
 ```bash
-# 构建并启动应用 (仅需暴露 3001 端口)
+# 构建并启动应用 (仅需暴露 8100 端口)
 docker-compose --profile prod up -d --build
 
-# 停止服务
+# 查看日志
+docker-compose --profile prod logs -f
+
+# 停止并删除生产容器
 docker-compose --profile prod down
 ```
 

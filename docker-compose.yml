@@ -37,7 +37,7 @@ services:
       context: .
       target: production
     ports:
-      - "3001:3001"
+      - "8100:3001"
     volumes:
       - ./data:/app/data
     environment:
