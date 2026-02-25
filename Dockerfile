@@ -12,8 +12,8 @@ RUN pnpm build
 FROM node:18-alpine
 WORKDIR /app
 
-# 安装 pnpm (后端可能用到)
-RUN npm install -g pnpm
+# 安装 pnpm 和 curl (用于健康检查)
+RUN apk add --no-cache curl && npm install -g pnpm
 
 # 复制后端代码和依赖
 COPY server/package*.json ./server/
